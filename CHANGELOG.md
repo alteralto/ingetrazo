@@ -45,6 +45,12 @@ El detalle completo está en la sección 0.5.10, más abajo.
 
 ### Arreglado
 
+- **La oclusión ambiental ya no pinta bandas verticales** en caras planas
+  vistas de forma oblicua (#989): el pase a media resolución leía la
+  profundidad en las esquinas de los texeles y la normal reconstruida
+  oscilaba, así que la propia cara se auto-ocluía en franjas. Ahora la
+  lectura cae en el centro de un texel y la cara queda uniforme. Se notaba
+  sobre todo en Windows, con el bloque escalonado de la captura.
 - **Un grupo o componente pintado entero con una textura ya no la pierde al
   guardar dos veces** (#877, análisis de @alanmirandaj): el primer guardado
   de la sesión borraba sin querer la ruta de la imagen en el modelo abierto,
