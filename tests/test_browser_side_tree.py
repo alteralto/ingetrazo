@@ -145,10 +145,18 @@ def test_a_drag_carries_the_rows_see_through_and_stacked():
         assert round(pm.height() / pm.devicePixelRatio()) == (
             tree.DRAG_ROWS + 1) * h
         img = pm.toImage()
+        # The rows are see-through; the «+1 more» line under them is drawn
+        # solid, to be read — sampled, its letters fell on a sample point
+        # with the CI's font. Only the rows' band is sampled here.
+        rows_bottom = round(tree.DRAG_ROWS * h * pm.devicePixelRatio())
         alphas = {img.pixelColor(x, y).alpha()
                   for x in range(5, img.width() - 5, 7)
-                  for y in range(3, img.height() - 3, 3)}
+                  for y in range(3, rows_bottom - 3, 3)}
         assert alphas and max(alphas) < 255
+        foot = {img.pixelColor(x, y).alpha()
+                for x in range(5, img.width() - 5)
+                for y in range(rows_bottom + 2, img.height() - 3)}
+        assert max(foot) == 255                     # the count reads solid
     finally:
         _close(win)
 
