@@ -105,6 +105,37 @@ def test_empty_parse_falls_back_to_converter(tmp_path, monkeypatch):
         skp_format.parse_skp(p)
 
 
+def test_a_reader_error_is_logged_with_its_traceback(tmp_path, monkeypatch,
+                                                     caplog):
+    # #497, #157: the reader's own error was swallowed, so a failed import
+    # left nothing to diagnose. The user still gets NeedsConverter.
+    class FailingBackend:
+        name = "failing"
+
+        def available(self):
+            return True
+
+        def supports(self, fmt):
+            return fmt == "skp"
+
+        def parse(self, path, progress=None):
+            raise ValueError("implausible def entity count")
+
+    monkeypatch.setattr(skp_format, "_BACKENDS", [FailingBackend()])
+    p = tmp_path / "legacy.skp"
+    p.write_bytes(_skp_header_bytes())
+    with caplog.at_level("WARNING", logger="formats.skp"):
+        with pytest.raises(skp_format.NeedsConverter):
+            skp_format.parse_skp(p)
+    [record] = [r for r in caplog.records if r.name == "formats.skp"]
+    assert record.levelname == "WARNING"
+    assert "failing" in record.getMessage()
+    assert "legacy.skp" in record.getMessage()
+    assert record.exc_info[0] is ValueError
+    assert "implausible def entity count" in caplog.text
+    assert "Traceback" in caplog.text
+
+
 # ---- OpenSKP adapter (fake model) ---------------------------------------------
 
 def _V(x, y, z=0.0):
@@ -202,6 +233,36 @@ def test_openskp_adapter_places_instances_with_transform():
     from PySide6.QtGui import QVector3D
     placed = proto["instances"][0].map(QVector3D(0.0, 0.0, 0.0))
     assert placed.x() == pytest.approx(2.54, abs=1e-4)  # +100 in on X
+
+
+def test_openskp_adapter_divides_an_instance_matrix_by_its_w():
+    # Issue #865: SketchUp sometimes stores a placement scaled through the
+    # matrix's own scalar (element 12, the homogeneous w): the 3x3 AND the
+    # translation are stored multiplied by it, and the real transform
+    # divides them back out. Reading the stored values raw brought the
+    # reported component in 100x large and 100x away. This matrix is the
+    # w=1 placement of the test above (identity, +100 in on X) stored with
+    # w = 100, so it must land exactly where that one lands.
+    child = _fake_definition(
+        id=5, name="Child",
+        verts={1: (0, 0, 0), 2: (10, 0, 0), 3: (10, 10, 0)},
+        edges={10: (1, 2), 11: (2, 3), 12: (3, 1)},
+        faces={20: [[(10, 1), (11, 1), (12, 1)]]},
+    )
+    inst = NS(ref_idx=5, matrix=[100, 0, 0, 0, 100, 0, 0, 0, 100,
+                                 10000, 0, 0, 100])
+    root = _fake_definition(
+        id=0, name="ROOT_MODEL", verts={}, edges={}, faces={}, instances=[inst])
+    model = NS(definitions={0: root, 5: child})
+    payload = skp_openskp._adapt(model, "instw")
+    proto = payload["protos"][0]
+    assert len(proto["instances"]) == 1
+    from PySide6.QtGui import QVector3D
+    placed = proto["instances"][0]
+    origin = placed.map(QVector3D(0.0, 0.0, 0.0))
+    assert origin.x() == pytest.approx(2.54, abs=1e-4)   # +100 in, not +10000
+    corner = placed.map(QVector3D(0.254, 0.0, 0.0))       # 10 in along X
+    assert corner.x() == pytest.approx(2.54 + 0.254, abs=1e-4)
 
 
 def test_openskp_adapter_returns_none_without_geometry():
@@ -543,6 +604,52 @@ def test_openskp_adapter_image_entities_become_billboards(tmp_path):
     bb = {g.name: g.billboard for g in scene.groups}
     assert bb["imagen#1"] == "mesh"
     assert bb["imagen#2"] is False
+
+
+def test_a_cutout_image_stuck_on_a_face_stays_put(tmp_path):
+    # #429 (audioinnovation.skp): logos with transparency glued to a device
+    # turned to face the camera — the file has no face-me flag for images,
+    # the cutout guess did it. Lying on a face (here a face of ANOTHER
+    # component, as in that file, 0.5 mm off it) keeps one static; a cutout
+    # standing free — the plaza's bull — still turns.
+    from PySide6.QtGui import QImage
+
+    cutout = tmp_path / "logo.png"
+    img = QImage(4, 4, QImage.Format_RGBA8888)
+    img.fill(0x00000000)
+    img.save(str(cutout), "PNG")
+
+    def image_def(id, name):
+        d = _tri_def(id, name)
+        d.faces[20].material_id = 51
+        d.is_image = True
+        return d
+
+    panel = _fake_definition(
+        id=7, name="Equipo",
+        verts={1: (-10, -10, 0), 2: (30, -10, 0), 3: (30, 30, 0),
+               4: (-10, 30, 0)},
+        edges={10: (1, 2), 11: (2, 3), 12: (3, 4), 13: (4, 1)},
+        faces={20: [[(13, 1), (10, 1), (11, 1), (12, 1)]]})
+    ident = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+    root = _fake_definition(
+        id=0, name="ROOT_MODEL", verts={}, edges={}, faces={}, instances=[
+            NS(ref_idx=7, material_id=None, matrix=ident + [0, 0, -0.02, 1]),
+            NS(ref_idx=5, material_id=None, matrix=ident + [0, 0, 0, 1]),
+            NS(ref_idx=6, material_id=None, matrix=ident + [0, 0, 100, 1])])
+    mats = {51: NS(name="L", color=(1, 1, 1), transparency=1, id=51,
+                   texture=NS(filename="logo.png", width=48.0, height=48.0,
+                              data=cutout.read_bytes()))}
+    model = NS(definitions={0: root, 5: image_def(5, "logo"),
+                            6: image_def(6, "toro"), 7: panel},
+               materials_by_id=mats)
+    skp = tmp_path / "m.skp"
+    skp.write_bytes(b"")
+    payload = skp_openskp._adapt(model, "m", skp_path=skp)
+
+    by_name = {g["name"]: g for g in payload["groups"]}
+    assert by_name["logo"]["billboard"] is False        # glued -> static
+    assert by_name["toro"]["billboard"] is True         # free -> face-me
 
 
 def test_openskp_adapter_default_mapping_is_local(tmp_path):
