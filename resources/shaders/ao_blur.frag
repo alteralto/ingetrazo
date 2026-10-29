@@ -6,11 +6,14 @@
 // "On this surface" is measured against the plane through the centre (its
 // depth slope read off the neighbours): a fixed depth window rejected every
 // neighbour of a floor seen at a grazing angle and left its noise in.
+// It runs twice: taps a texel apart (the tile), then two apart (u_spread),
+// so the gradient of a corner is spread wide and smooth.
 uniform sampler2D u_ao;
 uniform sampler2D u_depth;
 uniform vec2 u_texel;           // 1 / occlusion texture size
 uniform mat4 u_inv_proj;
 uniform float u_radius;
+uniform float u_spread;         // texels between taps: 1, then 2
 
 in vec2 v_uv;
 out vec4 fragColor;
@@ -47,8 +50,8 @@ void main() {
     for (int y = -2; y < 2; ++y) {
         for (int x = -2; x < 2; ++x) {
             vec2 o = vec2(float(x), float(y)) + 0.5;
-            vec2 uv = uv0 + o * u_texel;
-            float expect = z0 + gx * o.x + gy * o.y;
+            vec2 uv = uv0 + o * u_texel * u_spread;
+            float expect = z0 + (gx * o.x + gy * o.y) * u_spread;
             float w = abs(view_z(uv) - expect) < tol ? 1.0 : 0.0;
             sum += texture(u_ao, uv).r * w;
             wsum += w;
