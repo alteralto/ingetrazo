@@ -255,3 +255,73 @@ def test_the_panel_switch_edits_the_active_style():
     finally:
         win._saved_version = win.viewport.scene.version
         win.close()
+
+
+# ---- Stable (0.5.11): silhouettes, sky and flat faces ------------------------
+
+def test_the_sky_round_a_silhouette_is_never_darkened(monkeypatch):
+    """The occlusion is worked out at half size. Stretched back without
+    looking at depth, the dark value of a frame's corner leaked onto the
+    sky next to it: a dark, toothed halo round every slat and column (the
+    Windows round of 0.5.10.1). Every pixel that shows sky with nothing in
+    the model must show the very same sky with the occlusion on."""
+    from views.main_window import MainWindow
+    win = MainWindow()
+    try:
+        win.show()
+        _app.processEvents()
+        vp = win.viewport
+        if getattr(vp, "_gl", None) is None or not vp.isValid():
+            pytest.skip("no OpenGL context on this platform")
+        V = QVector3D
+        vp.camera.set_view("iso")
+        vp.camera.fit_to(V(-3, -3, 0), V(3, 3, 3))
+        for _ in range(3):
+            _app.processEvents()
+        empty = _render(vp, monkeypatch, "0")
+        # A frame of three posts and a lintel: inner corners, against sky.
+        mesh = vp.scene.mesh
+
+        def box(x0, y0, z0, x1, y1, z1):
+            p = [V(x0, y0, z0), V(x1, y0, z0), V(x1, y1, z0), V(x0, y1, z0),
+                 V(x0, y0, z1), V(x1, y0, z1), V(x1, y1, z1), V(x0, y1, z1)]
+            for idx in ((3, 2, 1, 0), (4, 5, 6, 7), (0, 1, 5, 4),
+                        (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)):
+                mesh.add_face([p[i] for i in idx])
+
+        for x in (-2.0, 0.0, 2.0):
+            box(x - 0.15, -0.15, 0, x + 0.15, 0.15, 2.4)
+        box(-2.3, -0.2, 2.4, 2.3, 0.2, 2.7)
+        vp.scene.version += 1
+        off = _render(vp, monkeypatch, "0")
+        on = _render(vp, monkeypatch, "1")
+        if getattr(vp, "_ao", None) is not None and vp._ao.broken:
+            pytest.skip(f"this driver refuses the pass: {vp._ao.broken}")
+        sky = empty == off
+        assert sky.mean() > 0.3
+        assert (off - on > 8).mean() > 0.0005      # the corners still darken
+        assert np.array_equal(on[sky], off[sky])
+    finally:
+        win._saved_version = win.viewport.scene.version
+        win.close()
+
+
+def test_an_error_left_pending_by_someone_else_does_not_switch_it_off(
+        box_on_floor, monkeypatch):
+    """Opening a big file left a GL error pending from its texture uploads;
+    the pass read it as its own depth resolve failing and stayed off for
+    the whole session, with the box ticked (Marco, playa Yanque)."""
+    vp = box_on_floor
+    off = _render(vp, monkeypatch, "0")
+    real = vp._apply_ambient_occlusion
+
+    def after_a_stray_error(*args, **kwargs):
+        vp._gl.glEnable(0x7FFF)                 # GL_INVALID_ENUM, left pending
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(vp, "_apply_ambient_occlusion", after_a_stray_error)
+    on = _render(vp, monkeypatch, "1")
+    if vp._ao.broken and vp._ao.broken != "depth resolve refused":
+        pytest.skip(f"this driver refuses the pass: {vp._ao.broken}")
+    assert not vp._ao.broken
+    assert ((off - on) > 8).mean() > 0.002      # it did darken the corner

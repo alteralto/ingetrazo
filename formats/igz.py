@@ -703,8 +703,21 @@ def save_scene(scene, path: Path) -> dict:
             payload["protos"] = protos
     layers = getattr(scene, "layers", None)
     if layers is not None and (len(layers) > 1 or any(
-            not ly.visible or ly.locked for ly in layers)):
+            not ly.visible or ly.locked or ly.has_style()
+            for ly in layers)):
         payload["layers"] = [ly.to_dict() for ly in layers]
+    # Older readers ignore both keys: new objects simply go to the default
+    # layer there, and the layers show as one flat list.
+    if getattr(scene, "active_layer", None):
+        payload["active_layer"] = scene.active_layer
+    folders = getattr(scene, "layer_folders", None)
+    if folders:
+        payload["layer_folders"] = list(folders)
+    from core.layers import folder_parent
+    parents = {f: folder_parent(scene, f) for f in folders or ()
+               if folder_parent(scene, f)}
+    if parents:
+        payload["layer_folder_parents"] = parents
     views = getattr(scene, "saved_views", None)
     if views:
         payload["saved_views"] = [v.to_dict() for v in views]
@@ -1178,6 +1191,9 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
     # reset here — or it leaked from the document open before (#602).
     from core.layers import DEFAULT_LAYER, Layer
     scene.layers = [Layer(DEFAULT_LAYER)]
+    scene.active_layer = None
+    scene.layer_folders = []
+    scene.folder_parents = {}
     scene.section_planes = []
     scene.show_section_planes = True
     scene.show_section_cuts = True
@@ -1198,6 +1214,17 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
         scene.layers = [Layer.from_dict(r) for r in raw_layers]
         if not any(ly.name == DEFAULT_LAYER for ly in scene.layers):
             scene.layers.insert(0, Layer(DEFAULT_LAYER))
+    active = payload.get("active_layer")
+    if isinstance(active, str) and scene.layer(active) is not None:
+        scene.active_layer = active
+    raw_folders = payload.get("layer_folders")
+    if isinstance(raw_folders, list):
+        scene.layer_folders = [f for f in raw_folders
+                               if isinstance(f, str) and f]
+    raw_parents = payload.get("layer_folder_parents")
+    if isinstance(raw_parents, dict):
+        scene.folder_parents = {f: p for f, p in raw_parents.items()
+                                if isinstance(f, str) and isinstance(p, str)}
     raw_tiles = payload.get("tile_layer")
     if raw_tiles:
         from georef.tiles import TileLayer
@@ -1296,16 +1323,39 @@ def _load_into_inner(scene, path: Path, progress=None) -> None:
             group.component = False
         return group
 
+    # Every name the document itself stores, children included: the groups
+    # it carries WITHOUT one are numbered continuing these, not the
+    # session's counter — the same file must load to the same names
+    # whatever was opened before it (issue #943).
+    stored_names: list = []
+
+    def _collect_name(raw, depth=0):
+        if not isinstance(raw, dict):
+            return
+        if raw.get("name"):
+            stored_names.append(raw["name"])
+        if depth < 32:              # the same limit as _group_from
+            for c in raw.get("children", []) or []:
+                _collect_name(c, depth + 1)
+
+    for raw in payload.get("groups", []) or []:
+        _collect_name(raw)
+    for raw in payload.get("kept_components", []) or []:
+        _collect_name(raw)
+
+    from core.group import document_name_scope
     raw_groups = payload.get("groups", []) or []
-    for i, raw in enumerate(raw_groups):
-        if i % 50 == 0:
-            tick(0.6 + 0.35 * i / max(1, len(raw_groups)), "Placing groups…")
-        scene.groups.append(_group_from(raw))
-    scene.kept_components = [
-        t for t in (_group_from(raw) for raw in
-                    payload.get("kept_components", []) or []
-                    if isinstance(raw, dict))
-        if t.is_component()]
+    with document_name_scope(stored_names):
+        for i, raw in enumerate(raw_groups):
+            if i % 50 == 0:
+                tick(0.6 + 0.35 * i / max(1, len(raw_groups)),
+                     "Placing groups…")
+            scene.groups.append(_group_from(raw))
+        scene.kept_components = [
+            t for t in (_group_from(raw) for raw in
+                        payload.get("kept_components", []) or []
+                        if isinstance(raw, dict))
+            if t.is_component()]
     tick(0.96, "Finishing…")
     if names:
         from core.group import reserve_group_names

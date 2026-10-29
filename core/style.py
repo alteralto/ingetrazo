@@ -62,15 +62,19 @@ class Style:
     # Lives in the STYLE, with the other modeling settings.
     section_fill: bool = True
     section_fill_color: tuple = (0.35, 0.37, 0.41)
-    # Ambient occlusion (#954, experimental): the soft darkening where
+    # Ambient occlusion (#954): the soft darkening where
     # surfaces meet. Off in every preset; the distance is in metres (how
     # far a surface still darkens its neighbour), the intensity 0–2.
     ambient_occlusion: bool = False
     ao_distance: float = 0.5
     ao_intensity: float = 1.0
+    # Colour by layer: faces draw in their layer's colour (core.layers
+    # .layer_color) instead of their material — the shaded, textured and
+    # X-ray modes. Off in every preset; a scene remembers it with the style.
+    color_by_layer: bool = False
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "name": self.name,
             "face_mode": self.face_mode,
             "edges": self.edges,
@@ -90,6 +94,9 @@ class Style:
             "ao_distance": self.ao_distance,
             "ao_intensity": self.ao_intensity,
         }
+        if self.color_by_layer:
+            out["color_by_layer"] = True
+        return out
 
     @classmethod
     def from_dict(cls, raw: dict) -> "Style":
@@ -119,6 +126,7 @@ class Style:
                                  AO_DISTANCE_RANGE),
             ao_intensity=_clamped(raw.get("ao_intensity"), d.ao_intensity,
                                   AO_INTENSITY_RANGE),
+            color_by_layer=bool(raw.get("color_by_layer", False)),
         )
 
     def copy(self) -> "Style":
