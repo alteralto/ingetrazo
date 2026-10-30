@@ -190,11 +190,27 @@ def test_a_column_sized_by_hand_is_left_alone():
         _close(win, panel)
 
 
+def _width_for_every_column(panel, width=440):
+    """``width``, or more when the style cannot fit all nine columns in
+    it: the three marks at their real size (38 px each with Fusion, not
+    the 26 asked), Name at its floor and the five others at 40 px — with
+    Fusion and the 12 px indent that is 436 px of columns, past the 405
+    a 440 px tray leaves them."""
+    head = panel.tree.header()
+    least = max(head.minimumSectionSize(), 40)
+    need = (panel._name_floor() + least * 5
+            + sum(head.sectionSize(c) for c in (COL_EYE, COL_LOCK,
+                                                COL_ISOLATE)))
+    chrome = width - panel.tree.viewport().width()
+    return max(width, need + chrome)
+
+
 def test_turning_on_material_copies_and_ifc_still_fits_the_panel():
     win, panel = _panel()
     try:
         panel._auto_fit = True
         _sized(panel, 440)
+        _sized(panel, _width_for_every_column(panel))
         head = panel.tree.header()
         for col in (COL_MATERIAL, COL_COPIES, COL_IFC):
             panel.set_column_shown(col, True)
@@ -485,6 +501,9 @@ def test_copies_turned_on_sit_after_the_layer_and_read_the_count():
     from PySide6.QtCore import QSettings
     from PySide6.QtWidgets import QApplication
     QSettings().remove("browser/model_hidden_columns")   # never chosen
+    # Nor sized by hand: widths an earlier test saved end the fitting,
+    # and the columns then ran 7 px past the tray (Fusion's 38 px marks).
+    QSettings().remove("browser/model_columns")
     # An order saved before: Copies past Type, Layer and Material.
     QSettings().setValue("browser/model_column_order", ",".join(str(c) for c in (
         COL_EYE, COL_LOCK, COL_ISOLATE, COL_NAME, COL_TYPE, COL_LAYER,
