@@ -6404,7 +6404,8 @@ class MainWindow(QMainWindow):
     RECLAIM_DELAY_MS = 1000
 
     def _schedule_reclaim(self, *_args) -> None:
-        QTimer.singleShot(self.RECLAIM_DELAY_MS, self._reclaim_memory)
+        # The window as context: closing it within the delay drops the call.
+        QTimer.singleShot(self.RECLAIM_DELAY_MS, self, self._reclaim_memory)
 
     def _reclaim_memory(self) -> None:
         """After a project's tab is closed: collect its reference cycles
