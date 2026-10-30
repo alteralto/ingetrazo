@@ -254,6 +254,7 @@ def test_un_face_me_colocado_por_matriz_se_dibuja_donde_esta_colocado():
     class _VP:
         _faceme_dir = Viewport._faceme_dir
         _billboard_mesh = Viewport._billboard_mesh
+        _billboard_extent = Viewport._billboard_extent
         camera = _Cam()
 
         def __init__(self, scene):

@@ -6211,10 +6211,11 @@ class MainWindow(QMainWindow):
         File ▸ New."""
         self._on_new()
 
-    def activate_document(self, doc) -> None:
+    def activate_document(self, doc, closing: bool = False) -> None:
         """Bring ``doc``'s tab to the front. The tool in hand is dropped and
         an open group is left in the project left behind; the panels, the
-        menus and the title follow the one in front."""
+        menus and the title follow the one in front. ``closing``: the one
+        left behind is about to go, so no hover picture is taken of it."""
         if doc is None or doc not in self._documents:
             return
         bar = self._project_tabs
@@ -6225,13 +6226,13 @@ class MainWindow(QMainWindow):
             # An extension's workspace holds the window: stay on it.
             bar.set_current(self._doc)
             return
-        self._leave_document(self._doc)
+        self._leave_document(self._doc, picture=not closing)
         self._doc = doc
         self._doc_stack.setCurrentWidget(doc.slot_widget())
         bar.set_current(doc)
         self._enter_document(doc)
 
-    def _leave_document(self, doc) -> None:
+    def _leave_document(self, doc, picture: bool = True) -> None:
         vp = doc.viewport
         if vp is None:
             return
@@ -6241,7 +6242,9 @@ class MainWindow(QMainWindow):
         except RuntimeError:            # its widget is already gone
             return
         vp._last_pos = None
-        doc.thumbnail = self._tab_thumbnail(vp)
+        # The picture draws a whole frame again — seconds and ~650 MB of
+        # draw caches on the SPR the first time — wasted on a closing tab.
+        doc.thumbnail = self._tab_thumbnail(vp) if picture else None
         comp = doc.composer
         doc.composer_shown = bool(comp is not None and comp.isVisible())
         if doc.composer_shown:
@@ -6355,7 +6358,7 @@ class MainWindow(QMainWindow):
             i = bar.index_of(doc)
             docs = bar.documents()
             nxt = docs[i + 1] if i + 1 < len(docs) else docs[i - 1]
-            self.activate_document(nxt)
+            self.activate_document(nxt, closing=True)
         self._retire_document(doc)
         return True
 
@@ -6391,6 +6394,8 @@ class MainWindow(QMainWindow):
             vp.clipboard = None
             self._doc_stack.removeWidget(vp)
             vp.hide()
+            # Once it is really gone, give its memory back to the system.
+            vp.destroyed.connect(self._schedule_reclaim)
             vp.deleteLater()
         stand_in, doc.stand_in = doc.stand_in, None
         if stand_in is not None:
@@ -6469,6 +6474,36 @@ class MainWindow(QMainWindow):
         doc.stand_in = None if new is doc.viewport else new
         if doc is self._doc:
             stack.setCurrentWidget(new)
+
+    #: How long after a closed project's viewport is deleted its memory is
+    #: reclaimed: the panels showing it let go on their own deferred
+    #: refresh (the Browser's comes 300 ms after the switch and holds every
+    #: group until then).
+    RECLAIM_DELAY_MS = 1000
+
+    def _schedule_reclaim(self, *_args) -> None:
+        # The window as context: closing it within the delay drops the call.
+        QTimer.singleShot(self.RECLAIM_DELAY_MS, self, self._reclaim_memory)
+
+    def _reclaim_memory(self) -> None:
+        """After a project's tab is closed: collect its reference cycles
+        (the scene, its meshes and caches are freed only by the collector)
+        and hand the freed heap back to the system. Without the trim glibc
+        keeps it: closing the SPR beside plaza went 5.8 → 4.8 GB in the
+        system monitor; with it, ~0.8 GB. The collection is what freeing
+        costs anyway (1.2 s for the SPR on the Rust engine, ~25 s on the
+        Python one, whose millions of objects the collector would
+        otherwise free at some random later moment): the busy cursor says
+        so."""
+        import gc
+        from PySide6.QtWidgets import QApplication
+        from core import malloc_arenas
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            gc.collect()
+            malloc_arenas.trim()
+        finally:
+            QApplication.restoreOverrideCursor()
 
     # ---- Extension workspaces (ExtensionApp.enter_workspace) ----------------
     def enter_workspace(self, workspace) -> bool:
@@ -6707,7 +6742,7 @@ class MainWindow(QMainWindow):
         if not ok and created is not None and created in self._documents \
                 and self._doc_is_blank(created):
             # Nothing came in: the tab goes, the user is back where he was.
-            self.activate_document(previous)
+            self.activate_document(previous, closing=True)
             self._retire_document(created)
         return ok
 

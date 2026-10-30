@@ -175,6 +175,7 @@ def test_billboard_group_round_trips_and_faces_camera(tmp_path):
     class _VpB:
         _faceme_dir = Viewport._faceme_dir     # perspective: toward the eye
         _billboard_mesh = Viewport._billboard_mesh   # the placed mesh
+        _billboard_extent = Viewport._billboard_extent
 
         def __init__(self, scene, eye):
             self.scene = scene
