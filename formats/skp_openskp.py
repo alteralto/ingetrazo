@@ -1230,11 +1230,38 @@ def _adapt(model, name: str, skp_path=None):
                 continue
             proto_ids.add(child.id)
             _promote_nested(child)
-    # Which definitions the file places as GROUPS, not components (classic
-    # files; see openskp_compat): they import as groups.
+    # Which definitions the file places as GROUPS, not components (see
+    # openskp_compat): they import as groups.
     from formats import openskp_compat
     single_groups = {did for did in openskp_compat.group_definitions()
                      if uses.get(did) == 1}
+    # A COMPONENT copied side by side at the top level is a component however
+    # small (#1029: six 6-face shelves of one definition arrived as six
+    # loose groups, so the file's components read as groups). The sharing
+    # thresholds above guard against a tiny part repeated inside a parent
+    # turning into hundreds of child objects; at the top level every copy is
+    # its own object either way, so sharing its mesh adds none. Only when
+    # the parse told groups from components, and only definitions placed
+    # nowhere else — a nested copy would be pulled out of its parent.
+    if openskp_compat.kinds_known(legacy_era):
+        group_ids = openskp_compat.group_definitions()
+        top_uses: dict = {}
+        for r in roots:
+            for ins in getattr(r, "instances", []):
+                cid = getattr(by_id.get(getattr(ins, "ref_idx", None)),
+                              "id", None)
+                if cid is not None:
+                    top_uses[cid] = top_uses.get(cid, 0) + 1
+        for cid, n in top_uses.items():
+            if n < 2 or uses.get(cid) != n or cid in group_ids \
+                    or cid in proto_ids:
+                continue
+            child = by_id[cid]
+            if getattr(child, "is_image", False) or \
+                    getattr(child, "always_faces_camera", False) \
+                    or not _shareable(child):
+                continue
+            proto_ids.add(cid)
 
     groups: list = []
     proto_uses: dict = {}
@@ -1286,7 +1313,7 @@ def _adapt(model, name: str, skp_path=None):
                      loose_out=sub_lines)
             if sub or sub_lines:
                 # The name the user gave the group or copy, else its
-                # definition's («Group#3» is all SketchUp names a group).
+                # definition's («Group#3» is all a .skp names a group).
                 gp = {"name": ins_name or getattr(child, "name", None) or name,
                       "faces": sub, "soft_edges": sub_edges,
                       "loose_edges": sub_lines,
