@@ -3196,5 +3196,11 @@
  "DWG import cancelled.": "ยกเลิกการนำเข้า DWG แล้ว",
  "The DWG conversion took too long and was stopped.": "การแปลง DWG ใช้เวลานานเกินไปจึงถูกหยุด",
  "The DWG converter could not convert this drawing.": "ตัวแปลง DWG ไม่สามารถแปลงแบบนี้ได้",
- "Details: {details}": "รายละเอียด: {details}"
+ "Details: {details}": "รายละเอียด: {details}",
+ "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter เพื่อส่ง · Shift+Enter: ขึ้นบรรทัดใหม่ · ลากรูปภาพเข้ามาหรือวาง",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "โปรดทราบ: {model} ไม่รองรับการมองเห็น จึงจะไม่ส่งรูปภาพ — รูปภาพยังถูกเก็บไว้ และจะส่งอีกครั้งเมื่อคุณเปลี่ยนเป็นโมเดลที่รองรับการมองเห็น (Anthropic, OpenAI, Gemini, OpenRouter หรือโมเดล OpenCode Go ที่รองรับการมองเห็น เช่น glm-5.3-flash หรือ kimi-k3)",
+ "Model — «Models» in the connection box lists what your key can use": "โมเดล — «โมเดล» ในกล่องการเชื่อมต่อจะแสดงรายการที่คีย์ของคุณใช้ได้",
+ "Stop": "หยุด",
+ "Stopped — the answer in flight is discarded.": "หยุดแล้ว — คำตอบที่กำลังมาจะถูกทิ้ง",
+ "pasted image": "รูปภาพที่วาง"
 }

@@ -3193,5 +3193,11 @@
  "DWG import cancelled.": "DWG 가져오기를 취소했습니다.",
  "The DWG conversion took too long and was stopped.": "DWG 변환이 너무 오래 걸려 중지했습니다.",
  "The DWG converter could not convert this drawing.": "DWG 변환기가 이 도면을 변환하지 못했습니다.",
- "Details: {details}": "세부 정보: {details}"
+ "Details: {details}": "세부 정보: {details}",
+ "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter: 보내기 · Shift+Enter: 줄 바꿈 · 이미지를 끌어 놓거나 붙여 넣기",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "참고: {model}은(는) 이미지를 볼 수 없어 사진이 전송되지 않습니다 — 사진은 보관되며, 이미지를 지원하는 모델(Anthropic, OpenAI, Gemini, OpenRouter 또는 glm-5.3-flash, kimi-k3 같은 OpenCode Go 비전 모델)로 바꾸면 다시 전송됩니다.",
+ "Model — «Models» in the connection box lists what your key can use": "모델 — 연결 상자의 «모델»에서 키로 사용할 수 있는 모델 목록을 볼 수 있습니다",
+ "Stop": "중지",
+ "Stopped — the answer in flight is discarded.": "중지됨 — 진행 중인 답변은 버려집니다.",
+ "pasted image": "붙여 넣은 이미지"
 }

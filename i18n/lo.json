@@ -3196,5 +3196,11 @@
  "DWG import cancelled.": "ຍົກເລີກການນຳເຂົ້າ DWG ແລ້ວ.",
  "The DWG conversion took too long and was stopped.": "ການແປງ DWG ໃຊ້ເວລາດົນເກີນໄປ ແລະ ຖືກຢຸດໄວ້.",
  "The DWG converter could not convert this drawing.": "ຕົວແປງ DWG ບໍ່ສາມາດແປງແບບແຕ້ມນີ້ໄດ້.",
- "Details: {details}": "ລາຍລະອຽດ: {details}"
+ "Details: {details}": "ລາຍລະອຽດ: {details}",
+ "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter ເພື່ອສົ່ງ · Shift+Enter: ຂຶ້ນແຖວໃໝ່ · ລາກຮູບເຂົ້າມາ ຫຼື ວາງ",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "ໝາຍເຫດ: {model} ບໍ່ຮອງຮັບການເບິ່ງຮູບ, ສະນັ້ນຈະບໍ່ສົ່ງຮູບ — ຮູບຍັງຖືກເກັບໄວ້ ແລະ ຈະສົ່ງອີກເມື່ອທ່ານປ່ຽນໄປໃຊ້ໂມເດວທີ່ເບິ່ງຮູບໄດ້ (Anthropic, OpenAI, Gemini, OpenRouter ຫຼື ໂມເດວ OpenCode Go ທີ່ເບິ່ງຮູບໄດ້ ເຊັ່ນ glm-5.3-flash ຫຼື kimi-k3).",
+ "Model — «Models» in the connection box lists what your key can use": "ໂມເດວ — «ໂມເດວ» ໃນກ່ອງເຊື່ອມຕໍ່ຈະສະແດງລາຍການທີ່ກະແຈຂອງທ່ານໃຊ້ໄດ້",
+ "Stop": "ຢຸດ",
+ "Stopped — the answer in flight is discarded.": "ຢຸດແລ້ວ — ຄຳຕອບທີ່ກຳລັງມາຈະຖືກຖິ້ມ.",
+ "pasted image": "ຮູບທີ່ວາງ"
 }

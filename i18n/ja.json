@@ -3193,5 +3193,11 @@
   "DWG import cancelled.": "DWG のインポートをキャンセルしました。",
   "The DWG conversion took too long and was stopped.": "DWG の変換に時間がかかりすぎたため、停止しました。",
   "The DWG converter could not convert this drawing.": "DWG コンバーターはこの図面を変換できませんでした。",
-  "Details: {details}": "詳細: {details}"
+  "Details: {details}": "詳細: {details}",
+  "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter で送信 · Shift+Enter で改行 · 画像はドラッグまたは貼り付け",
+  "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "注意: {model} は画像を扱えないため、写真は送信されません — 写真は保持され、画像対応モデル (Anthropic、OpenAI、Gemini、OpenRouter、または glm-5.3-flash や kimi-k3 などの画像対応 OpenCode Go モデル) に切り替えると再び送信されます。",
+  "Model — «Models» in the connection box lists what your key can use": "モデル — 接続欄の「モデル」で、あなたのキーで使えるものを一覧できます",
+  "Stop": "停止",
+  "Stopped — the answer in flight is discarded.": "停止しました — 処理中の回答は破棄されます。",
+  "pasted image": "貼り付けた画像"
 }

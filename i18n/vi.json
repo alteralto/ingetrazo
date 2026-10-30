@@ -3220,5 +3220,11 @@
   "DWG import cancelled.": "Đã hủy nhập DWG.",
   "The DWG conversion took too long and was stopped.": "Quá trình chuyển đổi DWG mất quá nhiều thời gian và đã bị dừng.",
   "The DWG converter could not convert this drawing.": "Trình chuyển đổi DWG không thể chuyển đổi bản vẽ này.",
-  "Details: {details}": "Chi tiết: {details}"
+  "Details: {details}": "Chi tiết: {details}",
+  "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter để gửi · Shift+Enter: xuống dòng · kéo ảnh vào hoặc dán ảnh",
+  "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "Lưu ý: {model} không có khả năng thị giác, nên ảnh sẽ KHÔNG được gửi — ảnh vẫn được giữ lại và sẽ được gửi khi bạn chuyển sang mô hình có thị giác (Anthropic, OpenAI, Gemini, OpenRouter, hoặc mô hình OpenCode Go có thị giác như glm-5.3-flash hay kimi-k3).",
+  "Model — «Models» in the connection box lists what your key can use": "Mô hình — «Mô hình» trong hộp kết nối liệt kê những gì khóa của bạn có thể dùng",
+  "Stop": "Dừng",
+  "Stopped — the answer in flight is discarded.": "Đã dừng — câu trả lời đang chờ sẽ bị bỏ qua.",
+  "pasted image": "ảnh đã dán"
 }
