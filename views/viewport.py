@@ -5226,7 +5226,8 @@ class Viewport(QOpenGLWidget):
             if (g is not None and getattr(g, "locked", False)
                     and hasattr(g, "children")):
                 visible, layer_locked = self.scene._layer_state(g)
-                if visible and not layer_locked                         and self.scene.entity_visible(g):
+                if (visible and not layer_locked
+                        and self.scene.entity_visible(g)):
                     return g
                 return None
         return None
