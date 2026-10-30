@@ -133,3 +133,26 @@ def test_another_project_is_measured_on_its_own(monkeypatch):
             d.saved_content = d.viewport.scene.content_version
         win._saved_version = win.viewport.scene.version
         win.close()
+
+
+def test_an_empty_takeoff_maps_no_tree(monkeypatch):
+    """With nothing tagged there are no rows to hang from the groups: the
+    panel does not map the whole tree for them on each edit."""
+    from core import outliner
+    from views.main_window import MainWindow
+    win = MainWindow()
+    try:
+        scene = win.viewport.scene
+        _model(scene)
+        panel = win.bim_tray.bim
+        calls = []
+        real = outliner.parents
+        monkeypatch.setattr(outliner, "parents",
+                            lambda groups: calls.append(1) or real(groups))
+        scene.version += 1
+        panel.refresh()
+        assert calls == []
+        assert panel.tree.topLevelItemCount() == 0
+    finally:
+        win._saved_version = win.viewport.scene.version
+        win.close()

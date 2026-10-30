@@ -4623,6 +4623,11 @@ class BimPanel(QWidget):
             hist.tags_cv = scene.content_version
         self.tree.clear()
         self._containers = []
+        if not self._objects:
+            # Nothing to hang from the groups: no map of the tree to build
+            # (6.5 ms on the 21 406 groups of #158).
+            self._fit_tree()
+            return
         from core import outliner
         up = outliner.parents(scene.groups)
         # A tagged group's row is also the parent of what is tagged inside it.
