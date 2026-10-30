@@ -124,7 +124,7 @@ plugins; the details are in the AI plugins' comments).
 
 A plugin that needs more than a menu entry defines a module-level
 `setup(app)`. It is called once, when the main window is built, with an
-`ExtensionApp` (`views/extension_api.py`, `API_VERSION` 3). A plugin may
+`ExtensionApp` (`views/extension_api.py`, `API_VERSION` 2). A plugin may
 have tools, a `setup`, or both; if `setup` raises, the plugin shows as a
 load error and the application opens regardless.
 
@@ -208,7 +208,11 @@ is logged once and removed, never breaking the frame or the cursor; the
 painter state is saved and restored around every overlay; document data
 that is not JSON-safe is dropped on save rather than failing it.
 
-### Several projects in tabs (API 3)
+### Several projects in tabs
+
+Tabs only add to API 2, so `API_VERSION` stays 2: an extension that
+checks `app.api_version in (1, 2)` keeps loading. To know whether the
+window has tabs, test `hasattr(app, "on_document_closed")`.
 
 The window holds several projects, one per tab above the viewport, and
 each project has a viewport of its own (scene, undo history, camera).

@@ -10,13 +10,16 @@ is enough to build a whole feature outside the core (the Levels plugin is
 the worked example), which is the point: what only some users need lives
 in an extension they choose, not in everyone's IngeTrazo.
 
-Contract (``API_VERSION`` 3; still 0.x — see docs/plugins.md). Version 2
+Contract (``API_VERSION`` 2; still 0.x — see docs/plugins.md). Version 2
 adds, without changing anything version 1 did: named panels that keep
 their place and have a Window-menu entry, the projection an overlay needs,
-opening an extension's own file type, and workspaces. Version 3 adds
-projects in tabs: :attr:`ExtensionApp.viewport` and ``scene`` are the
-project in front, ``on_document_changed`` also fires when another tab comes
-to the front, and ``on_document_closed`` says when a tab goes.
+opening an extension's own file type, and workspaces. Projects in tabs
+only add to it, so the number stays 2 — published extensions check for
+``api_version in (1, 2)`` and a 3 would turn them away for nothing:
+:attr:`ExtensionApp.viewport` and ``scene`` are the project in front,
+``on_document_changed`` also fires when another tab comes to the front,
+and ``on_document_closed`` (test for it with ``hasattr``) says when a tab
+goes.
 
 - **Document data** is ONE JSON-safe value per extension (its key: the
   plugin's file name). It is saved in the .igz, reset by New/Open, and every
@@ -48,7 +51,7 @@ import logging
 
 log = logging.getLogger("ingetrazo.plugins")
 
-API_VERSION = 3
+API_VERSION = 2
 
 #: Suffixes the core itself reads (natively, or as an import): an extension
 #: claiming one would never actually see it, since ``open_path`` consults
