@@ -3895,11 +3895,68 @@ class CotaCanvasItem(_SheetItem):
             return
         if self._resizing:
             self.prepareGeometryChange()
-            self.model.dx_mm = event.pos().x()
-            self.model.dy_mm = event.pos().y()
+            self.model.dx_mm, self.model.dy_mm = self._snap_end(event.pos())
             self.update()
             return
         super(_SheetItem, self).mouseMoveEvent(event)
+
+    def _snap_end(self, pos) -> tuple:
+        """The dragged measured point, snapped to the views' geometry the
+        way the cota tool snaps (~7 px on screen) — what lets a point
+        dragged off the model go back ON it and anchor again (#1053).
+        Remembers the hit for the release; item coordinates in and out."""
+        self._end_hit = None
+        snap = getattr(self.composer, "nearest_snap_point", None)
+        views = self.scene().views() if self.scene() is not None else []
+        if not callable(snap) or not views:
+            return pos.x(), pos.y()
+        thr = 7.0 / max(views[0].transform().m11(), 1e-6)
+        o = self.pos()
+        hit = snap(o.x() + pos.x(), o.y() + pos.y(), thr)
+        if hit is None or hit[3] is None:
+            return pos.x(), pos.y()
+        self._end_hit = hit
+        return hit[0] - o.x(), hit[1] - o.y()
+
+    def _reanchor(self) -> None:
+        """A measured point dragged back onto the model anchors the cota
+        again (#1053): the dragged end snapped to a view's geometry and the
+        other end sits on that same view's geometry too — the rule a new
+        cota is anchored by. Drawn as the green handles again."""
+        hit_b = getattr(self, "_end_hit", None)
+        self._end_hit = None
+        snap = getattr(self.composer, "nearest_snap_point", None)
+        if hit_b is None or not callable(snap):
+            return
+        m = self.model
+        frame = hit_b[3]
+        views = self.scene().views() if self.scene() is not None else []
+        thr = (7.0 / max(views[0].transform().m11(), 1e-6) if views
+               else 1e-3)
+        hit_a = snap(m.x_mm, m.y_mm, thr)        # the end left in place
+        if hit_a is None or hit_a[3] is not frame:
+            return
+        if (hit_a[0], hit_a[1]) != (m.x_mm, m.y_mm):
+            # onto its point, the dragged end staying where it snapped
+            bx, by = m.x_mm + m.dx_mm, m.y_mm + m.dy_mm
+            self.prepareGeometryChange()
+            m.x_mm, m.y_mm = hit_a[0], hit_a[1]
+            m.dx_mm, m.dy_mm = bx - m.x_mm, by - m.y_mm
+            self._nudging = True             # exact: no magnetic snap
+            try:
+                self.setPos(m.x_mm, m.y_mm)
+            finally:
+                self._nudging = False
+        if not frame.uid:
+            import uuid
+            frame.uid = uuid.uuid4().hex
+        m.anchor_uid = frame.uid
+        m.a_world = list(hit_a[2])
+        m.b_world = list(hit_b[2])
+        follow = getattr(self.composer, "_follow_anchor", None)
+        if callable(follow):
+            follow(m, "a_world")
+            follow(m, "b_world")
 
     def mousePressEvent(self, event) -> None:
         note = getattr(self.composer, "note_drag_start", None)
@@ -3943,6 +4000,8 @@ class CotaCanvasItem(_SheetItem):
                 self.model.anchor_uid = ""
                 self.model.a_world = None
                 self.model.b_world = None
+        if self._press_state is not None and self._resizing:
+            self._reanchor()
         super().mouseReleaseEvent(event)
 
     def _paint_selection(self, painter: QPainter) -> None:
