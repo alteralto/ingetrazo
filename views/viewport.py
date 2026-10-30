@@ -722,6 +722,21 @@ def _content_ver(vp):
     return getattr(sc, "content_version", sc.version)
 
 
+def _plan_curved_edges(plan):
+    """The indices of a lazy plan's curve edges, in edge order (memoised
+    on the plan, which cannot change while the mesh stays lazy)."""
+    curved = plan.extra.get("curved_edges")
+    if curved is None:
+        import numpy as np
+        ids = plan.curve
+        # Most meshes have no curve at all: ``count`` tells in C.
+        curved = plan.extra["curved_edges"] = (
+            np.empty(0, dtype=np.int64) if ids.count(None) == len(ids)
+            else np.array([i for i, c in enumerate(ids) if c is not None],
+                          dtype=np.int64))
+    return curved
+
+
 def _lazy_edge_may_be_curve(mesh, a, b, tol=1e-3) -> bool:
     """Whether the edge of ``mesh`` from ``a`` to ``b`` (its own space) may
     be a curve's, asked of a still-lazy mesh's plan without building it.
@@ -734,12 +749,7 @@ def _lazy_edge_may_be_curve(mesh, a, b, tol=1e-3) -> bool:
         return True
     if not len(plan.edges):
         return False
-    curved = plan.extra.get("curved_edges")
-    if curved is None:
-        import numpy as np
-        curved = plan.extra["curved_edges"] = np.flatnonzero(
-            np.fromiter((c is not None for c in plan.curve), dtype=bool,
-                        count=len(plan.curve)))
+    curved = _plan_curved_edges(plan)
     if not len(curved):
         return False
     import numpy as np
@@ -14445,10 +14455,12 @@ class Viewport(QOpenGLWidget):
         if plan is not None:
             # A lazy mesh: its curves from the planned edges, the same
             # chains in the same order, nothing built.
-            ab = plan.edges.tolist()
-            for i, cid in enumerate(plan.curve):
-                if cid is not None:
-                    by_curve.setdefault(cid, []).append(ab[i])
+            # (only the curve edges listed: listing all of them was
+            # most of the first hover over the plant of #158)
+            curved = _plan_curved_edges(plan)
+            ab = plan.edges[curved].tolist()
+            for k, i in enumerate(curved.tolist()):
+                by_curve.setdefault(plan.curve[i], []).append(ab[k])
         else:
             for e in mesh.edges:
                 cid = getattr(e, "curve", None)
