@@ -3197,5 +3197,11 @@
  "Model — «Models» in the connection box lists what your key can use": "Модель — «Модели» в поле подключения перечисляет доступные для вашего ключа",
  "Stop": "Стоп",
  "Stopped — the answer in flight is discarded.": "Остановлено — ответ в пути отбрасывается.",
- "pasted image": "вставленное изображение"
+ "pasted image": "вставленное изображение",
+ "Using {var} from the environment": "Используется {var} из окружения",
+ "{var} is set in the environment — choose {name} as the provider to use it": "{var} задана в окружении — выберите {name} как провайдера, чтобы использовать её",
+ " Or define {var} in the environment and restart IngeTrazo.": " Или задайте {var} в окружении и перезапустите IngeTrazo.",
+ " The key came from the {var} environment variable.": " Ключ взят из переменной окружения {var}.",
+ "empty = {var} from the environment": "пусто = {var} из окружения",
+ "paste your {name} key": "вставьте ключ {name}"
 }

@@ -3199,5 +3199,11 @@
   "Model — «Models» in the connection box lists what your key can use": "モデル — 接続欄の「モデル」で、あなたのキーで使えるものを一覧できます",
   "Stop": "停止",
   "Stopped — the answer in flight is discarded.": "停止しました — 処理中の回答は破棄されます。",
-  "pasted image": "貼り付けた画像"
+  "pasted image": "貼り付けた画像",
+  "Using {var} from the environment": "環境変数 {var} を使用しています",
+  "{var} is set in the environment — choose {name} as the provider to use it": "{var} が環境に設定されています — 使うにはプロバイダーで {name} を選んでください",
+  " Or define {var} in the environment and restart IngeTrazo.": " または環境変数 {var} を設定して IngeTrazo を再起動してください。",
+  " The key came from the {var} environment variable.": " キーは環境変数 {var} から読み込まれました。",
+  "empty = {var} from the environment": "空欄 = 環境変数 {var}",
+  "paste your {name} key": "{name} のキーを貼り付けてください"
 }

@@ -3198,5 +3198,11 @@
  "Model — «Models» in the connection box lists what your key can use": "模型 — 连接框中的「模型」列出你的密钥可用的模型",
  "Stop": "停止",
  "Stopped — the answer in flight is discarded.": "已停止——正在传输的回复被丢弃。",
- "pasted image": "粘贴的图片"
+ "pasted image": "粘贴的图片",
+ "Using {var} from the environment": "正在使用环境变量 {var}",
+ "{var} is set in the environment — choose {name} as the provider to use it": "环境中已设置 {var} — 在“提供商”中选择 {name} 即可使用",
+ " Or define {var} in the environment and restart IngeTrazo.": " 或者在环境中设置 {var} 并重启 IngeTrazo。",
+ " The key came from the {var} environment variable.": " 该密钥来自环境变量 {var}。",
+ "empty = {var} from the environment": "留空 = 使用环境变量 {var}",
+ "paste your {name} key": "粘贴你的 {name} 密钥"
 }

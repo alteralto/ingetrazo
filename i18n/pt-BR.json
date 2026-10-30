@@ -3204,5 +3204,11 @@
  "Model — «Models» in the connection box lists what your key can use": "Modelo — «Modelos» na caixa de conexão lista os disponíveis para sua chave",
  "Stop": "Parar",
  "Stopped — the answer in flight is discarded.": "Parado — a resposta a caminho é descartada.",
- "pasted image": "imagem colada"
+ "pasted image": "imagem colada",
+ "Using {var} from the environment": "Usando {var} do ambiente",
+ "{var} is set in the environment — choose {name} as the provider to use it": "{var} está definida no ambiente — escolha {name} como provedor para usá-la",
+ " Or define {var} in the environment and restart IngeTrazo.": " Ou defina {var} no ambiente e reinicie o IngeTrazo.",
+ " The key came from the {var} environment variable.": " A chave veio da variável de ambiente {var}.",
+ "empty = {var} from the environment": "vazio = {var} do ambiente",
+ "paste your {name} key": "cole sua chave do {name}"
 }

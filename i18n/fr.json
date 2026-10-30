@@ -3197,5 +3197,11 @@
  "Model — «Models» in the connection box lists what your key can use": "Modèle — « Modèles » dans la zone de connexion liste ceux que votre clé peut utiliser",
  "Stop": "Arrêter",
  "Stopped — the answer in flight is discarded.": "Arrêté — la réponse en cours est ignorée.",
- "pasted image": "image collée"
+ "pasted image": "image collée",
+ "Using {var} from the environment": "Utilisation de {var} depuis l'environnement",
+ "{var} is set in the environment — choose {name} as the provider to use it": "{var} est définie dans l'environnement — choisissez {name} comme fournisseur pour l'utiliser",
+ " Or define {var} in the environment and restart IngeTrazo.": " Ou définissez {var} dans l'environnement et redémarrez IngeTrazo.",
+ " The key came from the {var} environment variable.": " La clé provenait de la variable d'environnement {var}.",
+ "empty = {var} from the environment": "vide = {var} depuis l'environnement",
+ "paste your {name} key": "collez votre clé {name}"
 }

@@ -3200,5 +3200,11 @@
  "Model — «Models» in the connection box lists what your key can use": "Model — «Models» di kotak koneksi mencantumkan yang dapat dipakai kunci Anda",
  "Stop": "Berhenti",
  "Stopped — the answer in flight is discarded.": "Berhenti — jawaban yang sedang berjalan dibuang.",
- "pasted image": "gambar yang ditempel"
+ "pasted image": "gambar yang ditempel",
+ "Using {var} from the environment": "Menggunakan {var} dari lingkungan",
+ "{var} is set in the environment — choose {name} as the provider to use it": "{var} diatur di lingkungan — pilih {name} sebagai penyedia untuk menggunakannya",
+ " Or define {var} in the environment and restart IngeTrazo.": " Atau definisikan {var} di lingkungan dan mulai ulang IngeTrazo.",
+ " The key came from the {var} environment variable.": " Kunci berasal dari variabel lingkungan {var}.",
+ "empty = {var} from the environment": "kosong = {var} dari lingkungan",
+ "paste your {name} key": "tempel kunci {name} Anda"
 }
