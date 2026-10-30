@@ -3233,5 +3233,19 @@
  "Push / pull": "Dorong / tarik",
  "Tilt forward / back": "Miring maju / mundur",
  "Twist left / right": "Putar kiri / kanan",
- "Roll left / right": "Guling kiri / kanan"
+ "Roll left / right": "Guling kiri / kanan",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Perhatian: {model} tidak memiliki kemampuan visi, jadi foto TIDAK akan dikirim — foto tetap tersimpan dan akan dikirim lagi saat Anda beralih ke model dengan kemampuan visi (Anthropic, OpenAI, Gemini, OpenRouter).",
+ "Enter sends · Shift+Enter: new line": "Enter mengirim · Shift+Enter: baris baru",
+ "New project (Ctrl+N)": "Proyek baru (Ctrl+N)",
+ "Close “{name}”?": "Tutup “{name}”?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} proyek memiliki perubahan yang belum disimpan:\n\n{names}\n\nSimpan sebelum keluar?",
+ "Save All": "Simpan Semua",
+ "Start a new, empty project in a tab of its own.": "Mulai proyek baru yang kosong di tab tersendiri.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Buka dokumen IngeTrazo (.igz) di tab tersendiri.",
+ "Close Project": "Tutup Proyek",
+ "Close the project in front, offering to save it; the others stay open.": "Tutup proyek yang di depan, dengan tawaran untuk menyimpannya; yang lain tetap terbuka.",
+ "Next Project": "Proyek Berikutnya",
+ "Bring the next project tab to the front.": "Bawa tab proyek berikutnya ke depan.",
+ "Previous Project": "Proyek Sebelumnya",
+ "Bring the previous project tab to the front.": "Bawa tab proyek sebelumnya ke depan."
 }

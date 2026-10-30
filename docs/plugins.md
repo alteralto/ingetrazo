@@ -124,7 +124,7 @@ plugins; the details are in the AI plugins' comments).
 
 A plugin that needs more than a menu entry defines a module-level
 `setup(app)`. It is called once, when the main window is built, with an
-`ExtensionApp` (`views/extension_api.py`, `API_VERSION` 2). A plugin may
+`ExtensionApp` (`views/extension_api.py`, `API_VERSION` 3). A plugin may
 have tools, a `setup`, or both; if `setup` raises, the plugin shows as a
 load error and the application opens regardless.
 
@@ -137,7 +137,8 @@ def setup(app):
     # .igz, reset by New/Open. Each set is one undo step.
     data = app.document_data(default={})
     app.set_document_data({"levels": [...]})
-    app.on_document_changed(refresh)      # edits, undo, New, Open
+    app.on_document_changed(refresh)      # edits, undo, New, Open, tab switch
+    app.on_document_closed(forget)        # forget(scene): a project tab closed
 
     # A tab in the side tray, beside Properties / BIM / Terrain. It goes
     # back where the user left it and is listed in Window ▸ Panels (the
@@ -206,6 +207,20 @@ it; a provider that raises is logged and skipped, an overlay that raises
 is logged once and removed, never breaking the frame or the cursor; the
 painter state is saved and restored around every overlay; document data
 that is not JSON-safe is dropped on save rather than failing it.
+
+### Several projects in tabs (API 3)
+
+The window holds several projects, one per tab above the viewport, and
+each project has a viewport of its own (scene, undo history, camera).
+`app.viewport` and `app.scene` always answer the project **in front**, so
+read them when you need them — a viewport kept from `setup()` stays the
+first tab's. `on_document_changed(fn)` also fires when another tab comes
+to the front, so a panel that shows document data refreshes with the same
+callback; `on_document_closed(fn)` calls `fn(scene)` when a tab is closed,
+with the scene that goes, to drop whatever you kept for it (keyed by the
+scene object). Overlays, snap providers and pickables registered once
+work in every tab, the ones opened later included. While a workspace is
+shown, the tabs do not switch.
 
 ### Toolbars created after startup
 

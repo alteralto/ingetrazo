@@ -3230,5 +3230,19 @@
  "Push / pull": "Нажать / потянуть",
  "Tilt forward / back": "Наклон вперёд / назад",
  "Twist left / right": "Поворот влево / вправо",
- "Roll left / right": "Крен влево / вправо"
+ "Roll left / right": "Крен влево / вправо",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Внимание: {model} не имеет функции зрения, поэтому фото НЕ будет отправлено. Оно сохранено и отправится при переключении на модель с поддержкой зрения.",
+ "Enter sends · Shift+Enter: new line": "Enter для отправки · Shift+Enter: новая строка",
+ "New project (Ctrl+N)": "Новый проект (Ctrl+N)",
+ "Close “{name}”?": "Закрыть «{name}»?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "В {n} проектах есть несохранённые изменения:\n\n{names}\n\nСохранить их перед выходом?",
+ "Save All": "Сохранить все",
+ "Start a new, empty project in a tab of its own.": "Начать новый пустой проект в отдельной вкладке.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Открыть документ IngeTrazo (.igz) в отдельной вкладке.",
+ "Close Project": "Закрыть проект",
+ "Close the project in front, offering to save it; the others stay open.": "Закрыть проект на переднем плане с предложением сохранить его; остальные остаются открытыми.",
+ "Next Project": "Следующий проект",
+ "Bring the next project tab to the front.": "Вывести вкладку следующего проекта на передний план.",
+ "Previous Project": "Предыдущий проект",
+ "Bring the previous project tab to the front.": "Вывести вкладку предыдущего проекта на передний план."
 }

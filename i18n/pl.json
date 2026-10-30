@@ -3238,5 +3238,19 @@
  "Push / pull": "Pchnij / pociągnij",
  "Tilt forward / back": "Pochyl do przodu / tyłu",
  "Twist left / right": "Obróć w lewo / prawo",
- "Roll left / right": "Przechyl w lewo / prawo"
+ "Roll left / right": "Przechyl w lewo / prawo",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Uwaga: {model} nie obsługuje obrazów, więc zdjęcie NIE zostanie wysłane — zostanie zachowane i dołączone po przełączeniu na model obsługujący obrazy (Anthropic, OpenAI, Gemini, OpenRouter).",
+ "Enter sends · Shift+Enter: new line": "Enter wysyła · Shift+Enter: nowa linia",
+ "New project (Ctrl+N)": "Nowy projekt (Ctrl+N)",
+ "Close “{name}”?": "Zamknąć „{name}”?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} projektów ma niezapisane zmiany:\n\n{names}\n\nZapisać je przed wyjściem?",
+ "Save All": "Zapisz wszystko",
+ "Start a new, empty project in a tab of its own.": "Rozpocznij nowy, pusty projekt we własnej karcie.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Otwórz dokument IngeTrazo (.igz) we własnej karcie.",
+ "Close Project": "Zamknij projekt",
+ "Close the project in front, offering to save it; the others stay open.": "Zamknij projekt na wierzchu, z propozycją zapisania; pozostałe zostają otwarte.",
+ "Next Project": "Następny projekt",
+ "Bring the next project tab to the front.": "Przenieś kartę następnego projektu na wierzch.",
+ "Previous Project": "Poprzedni projekt",
+ "Bring the previous project tab to the front.": "Przenieś kartę poprzedniego projektu na wierzch."
 }

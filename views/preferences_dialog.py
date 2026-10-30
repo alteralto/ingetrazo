@@ -843,6 +843,14 @@ class PreferencesDialog(QDialog):
         self._rest_fade_value.setText(f"{self._rest_fade.value()} %")
         self._rest_fade.setEnabled(self._rest.currentData() == "fade")
 
+    def _viewports(self) -> list:
+        """Every project's viewport (one per tab, #1066): a view setting
+        reaches the tabs in the back too."""
+        every = getattr(self._window, "all_viewports", None)
+        if callable(every):
+            return every()
+        return [self._window.viewport]
+
     def accept(self) -> None:  # noqa: D102 — QDialog override
         st = QSettings()
 
@@ -902,14 +910,17 @@ class PreferencesDialog(QDialog):
 
         # Rest-of-model mode: through the viewport (it persists the setting),
         # then the Camera menu checkmark follows.
+        # Every project's viewport, so a tab in the back follows too (#1066).
         fade = self._rest_fade.value() / 100.0
-        set_fade = getattr(self._window.viewport,
-                           "set_edit_rest_fade", None)
-        if callable(set_fade):
-            set_fade(fade)
         mode = self._rest.currentData()
-        if mode != self._window.viewport.edit_rest_mode:
-            self._window.viewport.set_edit_rest_mode(mode)
+        mode_changed = mode != self._window.viewport.edit_rest_mode
+        for v in self._viewports():
+            set_fade = getattr(v, "set_edit_rest_fade", None)
+            if callable(set_fade):
+                set_fade(fade)
+            if mode != v.edit_rest_mode:
+                v.set_edit_rest_mode(mode)
+        if mode_changed:
             act = getattr(self._window, "_rest_actions", {}).get(mode)
             if act is not None:
                 act.setChecked(True)
@@ -968,7 +979,9 @@ class PreferencesDialog(QDialog):
 
         st.setValue("nav/invert_wheel",
                     "1" if self._invert.isChecked() else "0")
-        self._window.viewport._invert_wheel = self._invert.isChecked()
+        viewports = self._viewports()
+        for v in viewports:
+            v._invert_wheel = self._invert.isChecked()
         _gs.set_value("cursor_style", self._cursor_style.currentData(), st)
         reapply = getattr(self._window.viewport, "_apply_tool_cursor", None)
         if callable(reapply):
@@ -976,22 +989,23 @@ class PreferencesDialog(QDialog):
 
         st.setValue("nav/invert_orbit_y",
                     "1" if self._invert_orbit.isChecked() else "0")
-        self._window.viewport._invert_orbit_y = self._invert_orbit.isChecked()
+        for v in viewports:
+            v._invert_orbit_y = self._invert_orbit.isChecked()
 
         # First Person reads it on every look move: nothing to push.
         st.setValue("walk/look_sensitivity", int(self._look_sens.value()))
 
         msaa = self._msaa.currentData()
         st.setValue("display/msaa", msaa)
-        vp = self._window.viewport
-        if getattr(vp, "_msaa", None) != msaa:
-            vp._msaa = msaa
-            # Void the FBO size so the next paint rebuilds it at the new
-            # sample count (the rebuild happens with the context current).
-            vp._fbo_size = None
-            update = getattr(vp, "update", None)
-            if callable(update):
-                update()
+        for vp in viewports:
+            if getattr(vp, "_msaa", None) != msaa:
+                vp._msaa = msaa
+                # Void the FBO size so the next paint rebuilds it at the new
+                # sample count (the rebuild happens with the context current).
+                vp._fbo_size = None
+                update = getattr(vp, "update", None)
+                if callable(update):
+                    update()
 
         px = int(self._icon_px.currentData())
         from views.icons import toolbar_icon_px

@@ -219,9 +219,16 @@ class AsistentePanel(QWidget):
     settings fold away, the chat takes the rest of the height."""
     _reply = Signal(object)     # object, not dict: queued dicts get COPIED
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        return self._live_viewport()
+
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent)
-        self._viewport = viewport
+        from views.documents import live_viewport
+        self._live_viewport = live_viewport(viewport)
         self._scope: dict = {"__name__": "__ai__"}
         self._convo: list[dict] = []
         #: OpenCode Go asks for a stable session id per conversation

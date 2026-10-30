@@ -3231,5 +3231,19 @@
  "Push / pull": "前推 / 后拉",
  "Tilt forward / back": "前 / 后倾斜",
  "Twist left / right": "左 / 右扭转",
- "Roll left / right": "左 / 右滚转"
+ "Roll left / right": "左 / 右滚转",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "注意：{model} 没有视觉功能，所以照片将不会发送 — 它会被保留，当您切换到具有视觉功能的模型时才会再次流动（Anthropic, OpenAI, Gemini, OpenRouter）。",
+ "Enter sends · Shift+Enter: new line": "回车发送 · Shift+回车：换行",
+ "New project (Ctrl+N)": "新建项目 (Ctrl+N)",
+ "Close “{name}”?": "关闭“{name}”?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} 个项目有未保存的更改:\n\n{names}\n\n退出前保存它们吗?",
+ "Save All": "全部保存",
+ "Start a new, empty project in a tab of its own.": "在单独的标签页中开始一个新的空项目。",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "在单独的标签页中打开 IngeTrazo 文档 (.igz)。",
+ "Close Project": "关闭项目",
+ "Close the project in front, offering to save it; the others stay open.": "关闭最前面的项目并提示保存;其他项目保持打开。",
+ "Next Project": "下一个项目",
+ "Bring the next project tab to the front.": "将下一个项目的标签页切换到前面。",
+ "Previous Project": "上一个项目",
+ "Bring the previous project tab to the front.": "将上一个项目的标签页切换到前面。"
 }

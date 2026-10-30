@@ -10,10 +10,13 @@ is enough to build a whole feature outside the core (the Levels plugin is
 the worked example), which is the point: what only some users need lives
 in an extension they choose, not in everyone's IngeTrazo.
 
-Contract (``API_VERSION`` 2; still 0.x — see docs/plugins.md). Version 2
+Contract (``API_VERSION`` 3; still 0.x — see docs/plugins.md). Version 2
 adds, without changing anything version 1 did: named panels that keep
 their place and have a Window-menu entry, the projection an overlay needs,
-opening an extension's own file type, and workspaces.
+opening an extension's own file type, and workspaces. Version 3 adds
+projects in tabs: :attr:`ExtensionApp.viewport` and ``scene`` are the
+project in front, ``on_document_changed`` also fires when another tab comes
+to the front, and ``on_document_closed`` says when a tab goes.
 
 - **Document data** is ONE JSON-safe value per extension (its key: the
   plugin's file name). It is saved in the .igz, reset by New/Open, and every
@@ -35,6 +38,9 @@ opening an extension's own file type, and workspaces.
   extension already claimed, is refused (logged, not raised).
 - A **workspace** shows the extension's own document instead of the model,
   which waits untouched ("parked") until the workspace is left.
+- **Projects in tabs**: overlays, snap providers and pickables registered
+  once work in every tab; ``viewport``/``scene`` are always read anew (do
+  not keep them from ``setup``).
 """
 from __future__ import annotations
 
@@ -42,7 +48,7 @@ import logging
 
 log = logging.getLogger("ingetrazo.plugins")
 
-API_VERSION = 2
+API_VERSION = 3
 
 #: Suffixes the core itself reads (natively, or as an import): an extension
 #: claiming one would never actually see it, since ``open_path`` consults
@@ -133,8 +139,26 @@ class ExtensionApp:
 
     def on_document_changed(self, fn) -> None:
         """Call ``fn()`` whenever the document changes — an edit, an undo,
-        New, Open — so a panel can show the current data."""
+        New, Open, and another project tab brought to the front — so a
+        panel can show the current data (:attr:`scene` is then the
+        project in front)."""
+        win = self._window
+        if hasattr(win, "_wire_viewport"):
+            # Projects in tabs: every viewport, the ones opened later too,
+            # and each answers only while its project is in front.
+            win.__dict__.setdefault("_doc_change_hooks", []).append(fn)
+            for vp in win.all_viewports():
+                vp.sceneVersionChanged.connect(
+                    lambda _v, v=vp: fn() if v is win.viewport else None)
+            return
         self.viewport.sceneVersionChanged.connect(lambda _v: fn())
+
+    def on_document_closed(self, fn) -> None:
+        """Call ``fn(scene)`` when a project's tab is closed, with the
+        scene that goes — to drop whatever the extension kept for it. The
+        project in front at that moment may be another one."""
+        win = self._window
+        win.__dict__.setdefault("_doc_close_hooks", []).append(fn)
 
     # ---- Side panel ----------------------------------------------------------
     def add_panel(self, title: str, widget, name: str | None = None, *,

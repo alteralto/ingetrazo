@@ -3230,5 +3230,19 @@
  "Push / pull": "Drücken / ziehen",
  "Tilt forward / back": "Vor / zurück kippen",
  "Twist left / right": "Links / rechts drehen",
- "Roll left / right": "Links / rechts rollen"
+ "Roll left / right": "Links / rechts rollen",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Hinweis: {model} kann keine Bilder sehen, daher wird das Foto NICHT gesendet — es wird aufbewahrt und wieder mitgeschickt, wenn du zu einem Modell mit Bilderkennung wechselst (Anthropic, OpenAI, Gemini, OpenRouter).",
+ "Enter sends · Shift+Enter: new line": "Enter sendet · Umschalt+Enter: neue Zeile",
+ "New project (Ctrl+N)": "Neues Projekt (Strg+N)",
+ "Close “{name}”?": "„{name}“ schließen?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} Projekte haben ungespeicherte Änderungen:\n\n{names}\n\nVor dem Beenden speichern?",
+ "Save All": "Alle speichern",
+ "Start a new, empty project in a tab of its own.": "Ein neues, leeres Projekt in einem eigenen Tab beginnen.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Ein IngeTrazo-Dokument (.igz) in einem eigenen Tab öffnen.",
+ "Close Project": "Projekt schließen",
+ "Close the project in front, offering to save it; the others stay open.": "Das vordere Projekt schließen und anbieten, es zu speichern; die anderen bleiben offen.",
+ "Next Project": "Nächstes Projekt",
+ "Bring the next project tab to the front.": "Den Tab des nächsten Projekts nach vorne holen.",
+ "Previous Project": "Vorheriges Projekt",
+ "Bring the previous project tab to the front.": "Den Tab des vorherigen Projekts nach vorne holen."
 }
