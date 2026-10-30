@@ -189,6 +189,16 @@ def _open_document_in(window, doc: "Path") -> None:
     if hasattr(window, "load_extensions"):
         window.load_extensions()
     ext = doc.suffix.lower()
+    if hasattr(window, "documents") and (
+            ext in (".igz", ".skp", ".dae", ".dxf", ".dwg")
+            or ext in getattr(window, "file_openers", {})):
+        # Projects in tabs (#1066): the document comes in a tab of its own
+        # (or its tab comes to the front), so nothing is discarded and
+        # nothing needs asking. After the first paint: a big file parses
+        # for seconds and the window must be visible, not frozen pre-show.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, lambda: window.open_path(doc))
+        return
     if ext == ".igz" or ext in getattr(window, "file_openers", {}):
         # A document REPLACES the drawing this window holds. File ▸ Open
         # and Open Recent ask about unsaved changes before they call

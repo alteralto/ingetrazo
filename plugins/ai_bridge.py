@@ -56,9 +56,18 @@ class _Bridge(QObject):
     # passes the PyObject by reference. (Cost us a hunt; now documented.)
     _dispatch = Signal(object)
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        from views.documents import follow_active
+        return follow_active(self._viewport_at_start)
+
     def __init__(self, viewport) -> None:
-        super().__init__(viewport)
-        self._viewport = viewport
+        # The window's, not the viewport's: a project tab closed must not
+        # take the bridge with it (#1066).
+        super().__init__(viewport.window() or viewport)
+        self._viewport_at_start = viewport
         self._server: socket.socket | None = None
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
@@ -338,9 +347,16 @@ class BridgeSection(QWidget):
     the exact lines to paste into the MCP client — the user who reached
     this is rarely the one who knows them by heart."""
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        from views.documents import follow_active
+        return follow_active(self._viewport_at_start)
+
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent)
-        self._viewport = viewport
+        self._viewport_at_start = viewport
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 0, 4, 4)
         self.section = FoldSection(tr("AI bridge (MCP)"), "ia/open_bridge",

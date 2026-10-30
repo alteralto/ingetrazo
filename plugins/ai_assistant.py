@@ -159,9 +159,16 @@ class AsistentePanel(QWidget):
     settings fold away, the chat takes the rest of the height."""
     _reply = Signal(object)     # object, not dict: queued dicts get COPIED
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        from views.documents import follow_active
+        return follow_active(self._viewport_at_start)
+
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent)
-        self._viewport = viewport
+        self._viewport_at_start = viewport
         self._scope: dict = {"__name__": "__ai__"}
         self._convo: list[dict] = []
         self._busy = False

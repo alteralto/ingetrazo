@@ -599,6 +599,14 @@ class PreferencesDialog(QDialog):
     def _units_for_new_toggled(self, _checked: bool) -> None:
         self._units_for_new_explicit = True
 
+    def _viewports(self) -> list:
+        """Every project's viewport (one per tab, #1066): a view setting
+        reaches the tabs in the back too."""
+        every = getattr(self._window, "all_viewports", None)
+        if callable(every):
+            return every()
+        return [self._window.viewport]
+
     def accept(self) -> None:  # noqa: D102 — QDialog override
         st = QSettings()
 
@@ -706,7 +714,9 @@ class PreferencesDialog(QDialog):
 
         st.setValue("nav/invert_wheel",
                     "1" if self._invert.isChecked() else "0")
-        self._window.viewport._invert_wheel = self._invert.isChecked()
+        viewports = self._viewports()
+        for v in viewports:
+            v._invert_wheel = self._invert.isChecked()
         _gs.set_value("cursor_style", self._cursor_style.currentData(), st)
         reapply = getattr(self._window.viewport, "_apply_tool_cursor", None)
         if callable(reapply):
@@ -714,22 +724,23 @@ class PreferencesDialog(QDialog):
 
         st.setValue("nav/invert_orbit_y",
                     "1" if self._invert_orbit.isChecked() else "0")
-        self._window.viewport._invert_orbit_y = self._invert_orbit.isChecked()
+        for v in viewports:
+            v._invert_orbit_y = self._invert_orbit.isChecked()
 
         # First Person reads it on every look move: nothing to push.
         st.setValue("walk/look_sensitivity", int(self._look_sens.value()))
 
         msaa = self._msaa.currentData()
         st.setValue("display/msaa", msaa)
-        vp = self._window.viewport
-        if getattr(vp, "_msaa", None) != msaa:
-            vp._msaa = msaa
-            # Void the FBO size so the next paint rebuilds it at the new
-            # sample count (the rebuild happens with the context current).
-            vp._fbo_size = None
-            update = getattr(vp, "update", None)
-            if callable(update):
-                update()
+        for vp in viewports:
+            if getattr(vp, "_msaa", None) != msaa:
+                vp._msaa = msaa
+                # Void the FBO size so the next paint rebuilds it at the new
+                # sample count (the rebuild happens with the context current).
+                vp._fbo_size = None
+                update = getattr(vp, "update", None)
+                if callable(update):
+                    update()
 
         px = int(self._icon_px.currentData())
         from views.icons import toolbar_icon_px

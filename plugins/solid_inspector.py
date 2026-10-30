@@ -661,9 +661,16 @@ class SolidInspectorPanel(QWidget):
     #: Below this width the list shows only Object and Status.
     WIDE = 560
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        from views.documents import follow_active
+        return follow_active(self._viewport_at_start)
+
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent)
-        self._viewport = viewport
+        self._viewport_at_start = viewport
         self._rows: list = []          # payload per table row
         #: The problem on screen: {"name", "index", "count", "item",
         #: "mesh", "matrix"} — or None.

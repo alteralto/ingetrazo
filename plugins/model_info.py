@@ -241,9 +241,16 @@ def _make_table(headers: list[str]) -> QTableWidget:
 class ModelInfoDialog(QDialog):
     """Tabbed, read-only model statistics."""
 
+    @property
+    def _viewport(self):
+        """The viewport of the project in front (projects in tabs, #1066):
+        the one handed in at setup may be a tab in the back, or closed."""
+        from views.documents import follow_active
+        return follow_active(self._viewport_at_start)
+
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent or viewport.window())
-        self._viewport = viewport
+        self._viewport_at_start = viewport
         self.setWindowTitle(tr("Model Info"))
         self.setMinimumSize(480, 520)
         self.resize(520, 600)

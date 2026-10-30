@@ -1,0 +1,272 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Marco Sumari Tellez and IngeTrazo contributors.
+"""Several projects open in one window, each in its own tab (#1066).
+
+A :class:`Document` is one open project. It owns a whole
+:class:`views.viewport.Viewport` — the scene, its undo history, the camera,
+every drawing cache and the GL textures live there already — plus what the
+main window used to keep for its single document: the file, the name of an
+import, the version last saved and auto-saved, the auto-save slot of an
+untitled drawing, and the sheet composer.
+
+The window keeps the viewports in a stack under a :class:`ProjectTabBar`
+and its ``viewport`` is a property that answers the ACTIVE document's. The
+hundreds of places that read ``window.viewport`` — the window, the panels,
+the extensions — follow the active tab without knowing tabs exist; a tab in
+the background is a hidden widget that Qt neither paints nor updates, and
+coming back to it rebuilds nothing.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
+from PySide6.QtCore import QEvent, QPoint, Qt, QTimer, Signal
+from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QTabBar, QToolButton,
+                               QWidget)
+
+from core.i18n import tr
+
+
+class Document:
+    """One open project: its viewport and the window's record of it."""
+
+    def __init__(self, viewport=None) -> None:
+        self.viewport = viewport
+        #: The .igz it was opened from or saved to (None = never saved).
+        self.path: Optional[Path] = None
+        #: The imported file's name, shown until the model is saved as .igz.
+        self.import_name: Optional[str] = None
+        #: Content version at the last save (see MainWindow._saved_version).
+        self.saved_content: int = 0
+        #: Scene version the auto-save last wrote, or None.
+        self.autosaved_version: Optional[int] = None
+        #: Which untitled auto-save slot it writes while it has no path
+        #: (``core.autosave.slot_for``): 1 is the classic ``untitled.igz``.
+        self.untitled_no: int = 1
+        #: The sheet composer of this document, created on demand.
+        self.composer = None
+        #: The composer was on screen when the user left this tab.
+        self.composer_shown = False
+        self.last_sheet: int = 0
+
+    def display_name(self) -> str:
+        if self.path is not None:
+            return Path(self.path).name
+        if self.import_name:
+            return str(self.import_name)
+        return tr("Untitled")
+
+    def same_file(self, path) -> bool:
+        """Whether ``path`` names the file this document holds."""
+        if self.path is None or path is None:
+            return False
+        try:
+            return Path(self.path).resolve() == Path(path).resolve()
+        except OSError:
+            return Path(self.path).absolute() == Path(path).absolute()
+
+
+class DocumentHost:
+    """The main window as one document's sheet composer sees it: everything
+    is the window's, except the viewport and the file, which stay that
+    document's even while another tab is in front — a composer's timer must
+    never render the other project into its frames."""
+
+    def __init__(self, window, doc: Document) -> None:
+        object.__setattr__(self, "_host_window", window)
+        object.__setattr__(self, "_host_doc", doc)
+
+    @property
+    def viewport(self):
+        return self._host_doc.viewport
+
+    @property
+    def _current_path(self):
+        return self._host_doc.path
+
+    def __getattr__(self, name):
+        return getattr(self._host_window, name)
+
+    def __setattr__(self, name, value) -> None:
+        setattr(self._host_window, name, value)
+
+
+def follow_active(viewport):
+    """The viewport of the tab in front of ``viewport``'s window — for a
+    panel built with the viewport of its day that must act on whichever
+    project the user is looking at. A viewport outside a tabbed window
+    (tests, a lone widget) is returned as it is."""
+    try:
+        win = viewport.window()
+    except (AttributeError, RuntimeError):
+        return viewport
+    live = getattr(win, "viewport", None) if win is not None else None
+    if live is None or not hasattr(win, "documents"):
+        return viewport
+    return live
+
+
+class ProjectTabBar(QWidget):
+    """The project tabs above the viewport: the file name, a dot while it
+    has unsaved changes, a × to close; «+» makes a new project; a middle
+    click closes; tabs are reordered by dragging them.
+
+    Signals carry the :class:`Document` (each tab's data)."""
+
+    activated = Signal(object)
+    closeRequested = Signal(object)
+    newRequested = Signal()
+    moved = Signal()
+
+    #: The mark of a project with unsaved changes, after its name.
+    DIRTY_MARK = " •"
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("project_tabs")
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(0)
+        bar = self.tabs = QTabBar(self)
+        bar.setObjectName("project_tab_bar")
+        bar.setDocumentMode(True)
+        bar.setExpanding(False)
+        bar.setMovable(True)
+        bar.setTabsClosable(True)
+        bar.setUsesScrollButtons(True)
+        bar.setElideMode(Qt.ElideMiddle)
+        bar.setDrawBase(False)
+        bar.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
+        bar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        bar.tabCloseRequested.connect(self._on_close_index)
+        bar.currentChanged.connect(self._on_current)
+        bar.tabMoved.connect(lambda *_a: self.moved.emit())
+        bar.installEventFilter(self)
+        row.addWidget(bar, 0)
+        plus = self.plus = QToolButton(self)
+        plus.setObjectName("project_tab_new")
+        plus.setText("+")
+        plus.setAutoRaise(True)
+        plus.setToolTip(tr("New project (Ctrl+N)"))
+        plus.setCursor(Qt.PointingHandCursor)
+        plus.clicked.connect(self.newRequested.emit)
+        row.addWidget(plus, 0)
+        row.addStretch(1)
+        self._quiet = False
+        from views.theme import style as theme_style
+        theme_style(self,
+            "#project_tabs {{ background: palette(window); }}"
+            "QTabBar#project_tab_bar::tab {{ padding: 3px 10px;"
+            " max-width: 260px; border: none;"
+            " border-bottom: 2px solid transparent; }}"
+            "QTabBar#project_tab_bar::tab:selected {{"
+            " border-bottom: 2px solid rgb({accent_rgb});"
+            " background: palette(base); }}"
+            "QTabBar#project_tab_bar::tab:!selected:hover {{"
+            " background: rgba({accent_rgb}, 40); }}"
+            "QToolButton#project_tab_new {{ padding: 0px 8px;"
+            " font-weight: bold; }}")
+
+    # ---- the tabs ---------------------------------------------------------
+    def count(self) -> int:
+        return self.tabs.count()
+
+    def documents(self) -> list:
+        return [self.tabs.tabData(i) for i in range(self.tabs.count())]
+
+    def index_of(self, doc) -> int:
+        for i in range(self.tabs.count()):
+            if self.tabs.tabData(i) is doc:
+                return i
+        return -1
+
+    def add(self, doc, index: int = -1) -> int:
+        self._quiet = True
+        try:
+            if index < 0:
+                i = self.tabs.addTab("")
+            else:
+                i = self.tabs.insertTab(index, "")
+            self.tabs.setTabData(i, doc)
+        finally:
+            self._quiet = False
+        return i
+
+    def remove(self, doc) -> None:
+        i = self.index_of(doc)
+        if i < 0:
+            return
+        self._quiet = True
+        try:
+            self.tabs.removeTab(i)
+        finally:
+            self._quiet = False
+
+    def set_current(self, doc) -> None:
+        i = self.index_of(doc)
+        if i >= 0 and i != self.tabs.currentIndex():
+            self._quiet = True
+            try:
+                self.tabs.setCurrentIndex(i)
+            finally:
+                self._quiet = False
+
+    def current(self):
+        i = self.tabs.currentIndex()
+        return self.tabs.tabData(i) if i >= 0 else None
+
+    def set_label(self, doc, name: str, dirty: bool, tip: str = "") -> None:
+        i = self.index_of(doc)
+        if i < 0:
+            return
+        text = name + (self.DIRTY_MARK if dirty else "")
+        if self.tabs.tabText(i) != text:
+            self.tabs.setTabText(i, text)
+        if self.tabs.tabToolTip(i) != tip:
+            self.tabs.setTabToolTip(i, tip)
+
+    def neighbour(self, doc, step: int):
+        """The document ``step`` tabs away from ``doc``, wrapping round."""
+        n = self.tabs.count()
+        i = self.index_of(doc)
+        if n == 0 or i < 0:
+            return None
+        return self.tabs.tabData((i + step) % n)
+
+    # ---- user input -------------------------------------------------------
+    def _on_current(self, index: int) -> None:
+        if self._quiet or index < 0:
+            return
+        doc = self.tabs.tabData(index)
+        # After the press: QTabBar is still handling it when the signal
+        # returns, and the window rebuilds things under the pointer.
+        QTimer.singleShot(0, self, lambda d=doc: self.activated.emit(d))
+
+    def _on_close_index(self, index: int) -> None:
+        doc = self.tabs.tabData(index)
+        if doc is not None:
+            QTimer.singleShot(0, self, lambda d=doc: self.closeRequested.emit(d))
+
+    def eventFilter(self, obj, event):  # noqa: N802 — Qt override
+        if obj is self.tabs:
+            t = event.type()
+            if (t == QEvent.MouseButtonRelease
+                    and event.button() == Qt.MiddleButton):
+                i = self.tabs.tabAt(event.position().toPoint())
+                if i >= 0:
+                    self._on_close_index(i)
+                    return True
+            elif (t == QEvent.MouseButtonDblClick
+                  and event.button() == Qt.LeftButton
+                  and self.tabs.tabAt(event.position().toPoint()) < 0):
+                self.newRequested.emit()       # the empty strip: a new tab
+                return True
+        return super().eventFilter(obj, event)
+
+    def tab_rect_global(self, doc):
+        i = self.index_of(doc)
+        if i < 0:
+            return None
+        r = self.tabs.tabRect(i)
+        return r.translated(self.tabs.mapToGlobal(QPoint(0, 0)))
