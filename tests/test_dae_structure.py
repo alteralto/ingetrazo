@@ -1,4 +1,4 @@
-"""COLLADA export keeps the model's structure (for SketchUp users) and
+"""COLLADA export keeps the model's structure (groups, components, tags) and
 IngeTrazo reads its own .dae back as it was."""
 from __future__ import annotations
 
