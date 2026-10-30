@@ -3216,5 +3216,17 @@
   "{n} scenes updated": "Đã cập nhật {n} cảnh",
   "Tool cursor:": "Con trỏ công cụ:",
   "The tool's icon": "Biểu tượng của công cụ",
-  "Crosshair": "Dấu chữ thập"
+  "Crosshair": "Dấu chữ thập",
+  "New project (Ctrl+N)": "Dự án mới (Ctrl+N)",
+  "Close “{name}”?": "Đóng “{name}”?",
+  "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} dự án có thay đổi chưa lưu:\n\n{names}\n\nLưu chúng trước khi thoát?",
+  "Save All": "Lưu tất cả",
+  "Start a new, empty project in a tab of its own.": "Bắt đầu một dự án mới, trống trong một thẻ riêng.",
+  "Open an IngeTrazo document (.igz) in a tab of its own.": "Mở một tài liệu IngeTrazo (.igz) trong một thẻ riêng.",
+  "Close Project": "Đóng dự án",
+  "Close the project in front, offering to save it; the others stay open.": "Đóng dự án ở phía trước, đề nghị lưu nó; các dự án khác vẫn mở.",
+  "Next Project": "Dự án tiếp theo",
+  "Bring the next project tab to the front.": "Đưa thẻ của dự án tiếp theo ra phía trước.",
+  "Previous Project": "Dự án trước",
+  "Bring the previous project tab to the front.": "Đưa thẻ của dự án trước ra phía trước."
 }

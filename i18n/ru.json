@@ -3189,5 +3189,17 @@
  "Texts": "Тексты",
  "Tool cursor:": "Курсор инструмента:",
  "The tool's icon": "Значок инструмента",
- "Crosshair": "Перекрестие"
+ "Crosshair": "Перекрестие",
+ "New project (Ctrl+N)": "Новый проект (Ctrl+N)",
+ "Close “{name}”?": "Закрыть «{name}»?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "В {n} проектах есть несохранённые изменения:\n\n{names}\n\nСохранить их перед выходом?",
+ "Save All": "Сохранить все",
+ "Start a new, empty project in a tab of its own.": "Начать новый пустой проект в отдельной вкладке.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Открыть документ IngeTrazo (.igz) в отдельной вкладке.",
+ "Close Project": "Закрыть проект",
+ "Close the project in front, offering to save it; the others stay open.": "Закрыть проект на переднем плане с предложением сохранить его; остальные остаются открытыми.",
+ "Next Project": "Следующий проект",
+ "Bring the next project tab to the front.": "Вывести вкладку следующего проекта на передний план.",
+ "Previous Project": "Предыдущий проект",
+ "Bring the previous project tab to the front.": "Вывести вкладку предыдущего проекта на передний план."
 }

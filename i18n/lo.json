@@ -3192,5 +3192,17 @@
 "{n} scenes updated": "ອັບເດດ {n} ສາກແລ້ວ",
 "Tool cursor:": "ເຄີເຊີເຄື່ອງມື:",
 "The tool's icon": "ໄອຄອນຂອງເຄື່ອງມື",
-"Crosshair": "ເຄື່ອງໝາຍບວກ"
+"Crosshair": "ເຄື່ອງໝາຍບວກ",
+"New project (Ctrl+N)": "ໂປຣເຈັກໃໝ່ (Ctrl+N)",
+"Close “{name}”?": "ປິດ “{name}” ບໍ?",
+"{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} ໂປຣເຈັກມີການປ່ຽນແປງທີ່ຍັງບໍ່ໄດ້ບັນທຶກ:\n\n{names}\n\nບັນທຶກກ່ອນອອກບໍ?",
+"Save All": "ບັນທຶກທັງໝົດ",
+"Start a new, empty project in a tab of its own.": "ເລີ່ມໂປຣເຈັກໃໝ່ທີ່ຫວ່າງເປົ່າໃນແຖບຂອງມັນເອງ.",
+"Open an IngeTrazo document (.igz) in a tab of its own.": "ເປີດເອກະສານ IngeTrazo (.igz) ໃນແຖບຂອງມັນເອງ.",
+"Close Project": "ປິດໂປຣເຈັກ",
+"Close the project in front, offering to save it; the others stay open.": "ປິດໂປຣເຈັກທີ່ຢູ່ດ້ານໜ້າ ແລະ ສະເໜີໃຫ້ບັນທຶກ; ໂປຣເຈັກອື່ນຍັງເປີດຢູ່.",
+"Next Project": "ໂປຣເຈັກຖັດໄປ",
+"Bring the next project tab to the front.": "ນຳແຖບຂອງໂປຣເຈັກຖັດໄປມາໄວ້ດ້ານໜ້າ.",
+"Previous Project": "ໂປຣເຈັກກ່ອນໜ້າ",
+"Bring the previous project tab to the front.": "ນຳແຖບຂອງໂປຣເຈັກກ່ອນໜ້າມາໄວ້ດ້ານໜ້າ."
 }

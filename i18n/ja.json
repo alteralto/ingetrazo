@@ -3189,5 +3189,17 @@
   "{n} scenes updated": "{n} 個のシーンを更新しました",
   "Tool cursor:": "ツールのカーソル:",
   "The tool's icon": "ツールのアイコン",
-  "Crosshair": "十字カーソル"
+  "Crosshair": "十字カーソル",
+  "New project (Ctrl+N)": "新しいプロジェクト (Ctrl+N)",
+  "Close “{name}”?": "「{name}」を閉じますか?",
+  "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} 個のプロジェクトに未保存の変更があります:\n\n{names}\n\n終了する前に保存しますか?",
+  "Save All": "すべて保存",
+  "Start a new, empty project in a tab of its own.": "新しい空のプロジェクトを専用のタブで開始します。",
+  "Open an IngeTrazo document (.igz) in a tab of its own.": "IngeTrazo ドキュメント (.igz) を専用のタブで開きます。",
+  "Close Project": "プロジェクトを閉じる",
+  "Close the project in front, offering to save it; the others stay open.": "前面のプロジェクトを閉じます (保存を確認します)。ほかのプロジェクトは開いたままです。",
+  "Next Project": "次のプロジェクト",
+  "Bring the next project tab to the front.": "次のプロジェクトのタブを前面に出します。",
+  "Previous Project": "前のプロジェクト",
+  "Bring the previous project tab to the front.": "前のプロジェクトのタブを前面に出します。"
 }

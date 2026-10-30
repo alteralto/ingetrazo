@@ -3189,5 +3189,17 @@
  "{n} scenes updated": "장면 {n}개 업데이트됨",
  "Tool cursor:": "도구 커서:",
  "The tool's icon": "도구 아이콘",
- "Crosshair": "십자선"
+ "Crosshair": "십자선",
+ "New project (Ctrl+N)": "새 프로젝트 (Ctrl+N)",
+ "Close “{name}”?": "“{name}”을(를) 닫을까요?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n}개 프로젝트에 저장하지 않은 변경 사항이 있습니다:\n\n{names}\n\n종료하기 전에 저장할까요?",
+ "Save All": "모두 저장",
+ "Start a new, empty project in a tab of its own.": "새 빈 프로젝트를 별도 탭에서 시작합니다.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "IngeTrazo 문서(.igz)를 별도 탭에서 엽니다.",
+ "Close Project": "프로젝트 닫기",
+ "Close the project in front, offering to save it; the others stay open.": "앞에 있는 프로젝트를 닫고 저장할지 묻습니다. 다른 프로젝트는 열린 채로 남습니다.",
+ "Next Project": "다음 프로젝트",
+ "Bring the next project tab to the front.": "다음 프로젝트 탭을 앞으로 가져옵니다.",
+ "Previous Project": "이전 프로젝트",
+ "Bring the previous project tab to the front.": "이전 프로젝트 탭을 앞으로 가져옵니다."
 }

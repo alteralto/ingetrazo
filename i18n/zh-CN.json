@@ -3190,5 +3190,17 @@
  "Texts": "文字",
  "Tool cursor:": "工具光标：",
  "The tool's icon": "工具图标",
- "Crosshair": "十字线"
+ "Crosshair": "十字线",
+ "New project (Ctrl+N)": "新建项目 (Ctrl+N)",
+ "Close “{name}”?": "关闭“{name}”?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} 个项目有未保存的更改:\n\n{names}\n\n退出前保存它们吗?",
+ "Save All": "全部保存",
+ "Start a new, empty project in a tab of its own.": "在单独的标签页中开始一个新的空项目。",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "在单独的标签页中打开 IngeTrazo 文档 (.igz)。",
+ "Close Project": "关闭项目",
+ "Close the project in front, offering to save it; the others stay open.": "关闭最前面的项目并提示保存;其他项目保持打开。",
+ "Next Project": "下一个项目",
+ "Bring the next project tab to the front.": "将下一个项目的标签页切换到前面。",
+ "Previous Project": "上一个项目",
+ "Bring the previous project tab to the front.": "将上一个项目的标签页切换到前面。"
 }

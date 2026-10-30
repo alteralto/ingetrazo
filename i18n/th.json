@@ -3192,5 +3192,17 @@
  "{n} scenes updated": "อัปเดต {n} ฉากแล้ว",
  "Tool cursor:": "เคอร์เซอร์เครื่องมือ:",
  "The tool's icon": "ไอคอนของเครื่องมือ",
- "Crosshair": "กากบาท"
+ "Crosshair": "กากบาท",
+ "New project (Ctrl+N)": "โปรเจกต์ใหม่ (Ctrl+N)",
+ "Close “{name}”?": "ปิด “{name}” หรือไม่?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "มี {n} โปรเจกต์ที่ยังไม่ได้บันทึกการเปลี่ยนแปลง:\n\n{names}\n\nบันทึกก่อนออกหรือไม่?",
+ "Save All": "บันทึกทั้งหมด",
+ "Start a new, empty project in a tab of its own.": "เริ่มโปรเจกต์ใหม่ที่ว่างเปล่าในแท็บของตัวเอง",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "เปิดเอกสาร IngeTrazo (.igz) ในแท็บของตัวเอง",
+ "Close Project": "ปิดโปรเจกต์",
+ "Close the project in front, offering to save it; the others stay open.": "ปิดโปรเจกต์ที่อยู่ด้านหน้า พร้อมเสนอให้บันทึก โปรเจกต์อื่นยังเปิดอยู่",
+ "Next Project": "โปรเจกต์ถัดไป",
+ "Bring the next project tab to the front.": "นำแท็บของโปรเจกต์ถัดไปมาไว้ด้านหน้า",
+ "Previous Project": "โปรเจกต์ก่อนหน้า",
+ "Bring the previous project tab to the front.": "นำแท็บของโปรเจกต์ก่อนหน้ามาไว้ด้านหน้า"
 }

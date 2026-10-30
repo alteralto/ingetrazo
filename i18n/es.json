@@ -3189,5 +3189,17 @@
  "Texts": "Textos",
  "Tool cursor:": "Cursor de herramienta:",
  "The tool's icon": "El icono de la herramienta",
- "Crosshair": "Cruz"
+ "Crosshair": "Cruz",
+ "New project (Ctrl+N)": "Proyecto nuevo (Ctrl+N)",
+ "Close “{name}”?": "¿Cerrar «{name}»?",
+ "{n} projects have unsaved changes:\n\n{names}\n\nSave them before quitting?": "{n} proyectos tienen cambios sin guardar:\n\n{names}\n\n¿Guardarlos antes de salir?",
+ "Save All": "Guardar todo",
+ "Start a new, empty project in a tab of its own.": "Empieza un proyecto nuevo y vacío en una pestaña propia.",
+ "Open an IngeTrazo document (.igz) in a tab of its own.": "Abre un documento de IngeTrazo (.igz) en una pestaña propia.",
+ "Close Project": "Cerrar proyecto",
+ "Close the project in front, offering to save it; the others stay open.": "Cierra el proyecto que está delante, ofreciendo guardarlo; los demás siguen abiertos.",
+ "Next Project": "Proyecto siguiente",
+ "Bring the next project tab to the front.": "Trae al frente la pestaña del proyecto siguiente.",
+ "Previous Project": "Proyecto anterior",
+ "Bring the previous project tab to the front.": "Trae al frente la pestaña del proyecto anterior."
 }
