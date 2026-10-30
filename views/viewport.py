@@ -2093,6 +2093,7 @@ class Viewport(QOpenGLWidget):
         # Instanced pass: re-shade the prototype's baked tones for the
         # rotation of each copy (#482), against the bake's own light.
         self._loc_reshade = self._program.uniformLocation("u_reshade")
+        self._loc_back_shade = self._program.uniformLocation("u_back_shade")
         self._program.bind()
         self._program.setUniformValue(self._loc_reshade, 0)
         self._program.setUniformValue(
@@ -2812,6 +2813,7 @@ class Viewport(QOpenGLWidget):
             self._program.setUniformValue(self._loc_use_vcolor, 0)
             self._program.setUniformValue(self._loc_use_tex, 0)
             self._set_back_face_color()
+            self._program.setUniformValue(self._loc_back_shade, 1)
             self._dback_vao.bind()
             if split_db is None:
                 for _vs, _vc in db_draw:
@@ -2833,7 +2835,13 @@ class Viewport(QOpenGLWidget):
         # Instanced components (P2): eligible instances draw from their
         # prototype's local VBOs with per-instance matrices — the
         # consolidated passes above excluded them in _sync_edges.
+        # The instanced default backs shade the same way (the flag only
+        # speaks to back-facing fragments in the back colour; set for the
+        # whole call, which the recorded native replay sees too).
+        if mode in ("textures", "shaded") and not _NO_BACK_TINT:
+            self._program.setUniformValue(self._loc_back_shade, 1)
         self._draw_instanced_faces(mode, style)
+        self._program.setUniformValue(self._loc_back_shade, 0)
         # Shadows stop at the face passes: edges, overlays, previews and
         # billboards stay unlit (v1 scope).
         if getattr(self, "_frame_shadow", None) is not None:
