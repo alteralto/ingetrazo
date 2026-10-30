@@ -580,3 +580,20 @@ def test_delete_leaves_a_group_holding_a_locked_one():
         assert building in scene.groups
     finally:
         _close(win)
+
+
+def test_a_refresh_walks_the_model_structure_once(monkeypatch):
+    """The rows' shape already holds the model's structure: a refresh on
+    the plant of #158 walked its 21 406 groups twice for it."""
+    building, tree = _building()
+    win, scene, panel = _window_with(building, tree)
+    try:
+        calls = []
+        real = outliner.structure
+        monkeypatch.setattr(outliner, "structure",
+                            lambda groups: calls.append(1) or real(groups))
+        panel._forget_rows()
+        panel.refresh()
+        assert len(calls) == 1
+    finally:
+        _close(win)

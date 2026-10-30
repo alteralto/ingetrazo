@@ -1280,7 +1280,7 @@ class OutlinerPanel(QWidget):
             getattr(self._window, "_outliner_kinds", None) or ())
         scene = self._scene()
         shape = self._rows_shape(scene)
-        struct = outliner.structure(scene.groups)
+        struct = shape[0]               # _rows_shape already walked it
         # A click changes the view, not the rows: with the content and the
         # open path as they were, every row reads as it did (21 406 rows
         # read again after each click on the plant of #158, ~0.15 s).
