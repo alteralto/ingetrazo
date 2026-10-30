@@ -2339,11 +2339,11 @@ class Viewport(QOpenGLWidget):
         self._depth_clean = None          # see the read-back at the end
         self._sync_axes()
         self._sync_projection()
-        self._sync_depth_reach()
         if self._program is None:
             if self._gl is not None:          # a context below GL 3.3
                 self._gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             return
+        self._sync_depth_reach()
         _pt0 = _time_mod.perf_counter() if _PERF else 0.0
 
         # Render the 3D scene into our own FBO (which has a real depth buffer)
