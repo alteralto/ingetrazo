@@ -4112,6 +4112,10 @@ class MainWindow(QMainWindow):
             self._execute_make(ExplodeGroupCommand(g))
         if groups:
             self.viewport.update()
+        elif any(type(e).__name__ == "ImagePlane"
+                 for e in self.viewport.scene.selection):
+            # The same command on a selected image explodes the image (#687).
+            self._on_explode_image()
 
     def _on_simplify_mesh(self) -> None:
         from PySide6.QtWidgets import QInputDialog
@@ -4747,6 +4751,8 @@ class MainWindow(QMainWindow):
         if images:
             menu.addAction(tr("Image size…"), self._on_image_size)
             menu.addAction(tr("Image opacity…"), self._on_image_opacity)
+            # #687: «no encontré la opción para explotarla y así poderla usar»
+            menu.addAction(tr("Explode Image"), self._on_explode_image)
             act_lock = menu.addAction(tr("Lock"), self._on_toggle_image_lock)
             act_lock.setCheckable(True)
             act_lock.setChecked(bool(images[0].locked))
@@ -8147,6 +8153,28 @@ class MainWindow(QMainWindow):
         remove()
         self.statusBar().showMessage(
             tr("Launcher removed from the applications menu"), 5000)
+
+    def _on_explode_image(self) -> None:
+        """Explode the selected reference images into real geometry: each
+        becomes a group holding one face textured with its picture, where the
+        image was (#687: an imported image could not be painted with, sampled
+        or exploded — it is a tracing underlay until you say otherwise). One
+        undo step puts the images back."""
+        from core.history import (CompoundCommand, DeleteImagePlanesCommand,
+                                  InsertGroupCommand)
+        from core.image_plane import ImagePlane
+        scene = self.viewport.scene
+        images = [e for e in scene.selection if isinstance(e, ImagePlane)]
+        pairs = [(im, im.as_group()) for im in images]
+        pairs = [(im, g) for im, g in pairs if g is not None]
+        if not pairs:
+            return
+        cmds = [DeleteImagePlanesCommand([im for im, _g in pairs])]
+        cmds += [InsertGroupCommand(g) for _im, g in pairs]
+        self.viewport.history.execute(CompoundCommand(cmds))
+        scene.selection.update(g for _im, g in pairs)
+        scene.version += 1
+        self.viewport.update()
 
     def _on_toggle_image_lock(self) -> None:
         """Lock an image so clicks fall through to what you are drawing on top

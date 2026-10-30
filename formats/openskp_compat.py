@@ -38,11 +38,28 @@ reader takes them as leader attachments, and the list then reads its
 definition's tail as items. The tail's signature now ends a definition list
 whatever was counted (upstream checked it only after a "burn").
 
+**Groups arrive as components.** The classic reader reads a ``CGroup``
+and a ``CComponentInstance`` alike and keeps no trace of which it was, and
+the 2021+ reader drops the definition's kind. The definitions placed
+through a ``CGroup``, or marked as groups by their kind, are noted during
+the parse (:func:`group_definitions`) so the import makes them groups
+again.
+
+**A 2019 layer record two bytes longer.** From the 2019 version on, a
+layer record ends 23 bytes after its last string, not 21 (the new field is
+most likely the layer's dash pattern). The reader skips 21, so in the first
+definition the next count read two bytes early, came out at 33 million
+and the file did not open («implausible def entity count», #157). The
+2020 files still opened only because the reader already steps over zero
+words between layers and around their counts there; only 2019 files take
+the two extra bytes here.
+
 All patches are detected by BEHAVIOUR, not by version: once the upstream
 reader carries ``_connection_paths`` the first is left alone, the second
-only touches a face layer that is still a number, and the last two step
-aside once the text reader no longer scans for the delimiter and the list
-reader no longer ties the tail check to burns.
+only touches a face layer that is still a number, the anchor and list
+fixes step aside once the text reader no longer scans for the delimiter
+and the list reader no longer ties the tail check to burns, and the layer
+fix once the layer reader looks at the version itself.
 """
 from __future__ import annotations
 
@@ -67,7 +84,99 @@ def apply() -> bool:
     layers = _keep_layer_table()
     texts = _fix_anchored_texts(L)
     lists = _fix_definition_list_end(L)
-    return _fix_legacy_dimensions(L) or layers or texts or lists
+    groups = _note_legacy_groups(L)
+    kinds = _note_definition_kinds()
+    tails = _fix_layer_tail_2019(L)
+    return _fix_legacy_dimensions(L) or layers or texts or lists \
+        or groups or kinds or tails
+
+
+def _note_legacy_groups(L) -> bool:
+    """Remember which definitions a classic (pre-2021) file places through a
+    ``CGroup`` — a GROUP — rather than a ``CComponentInstance``.
+    The reader reads both the same way and the model it builds keeps no
+    trace of which it was, so a group arrived as a component. The ids land
+    in a per-thread set, reset before each parse (see
+    :func:`reset_group_definitions`)."""
+    readers = getattr(L, "_READERS", None)
+    original = (readers or {}).get("CGroup")
+    if original is None or getattr(original, "_notes_groups", False):
+        return False
+
+    def read_group(ar, r):
+        rec = original(ar, r)
+        if isinstance(rec, dict) and rec.get("def") is not None:
+            if not hasattr(_parse_tables, "groups"):
+                _parse_tables.groups = set()
+            _parse_tables.groups.add(rec["def"])
+        return rec
+
+    read_group._notes_groups = True
+    readers["CGroup"] = read_group
+    return True
+
+
+def _note_definition_kinds() -> bool:
+    """Remember which definitions a 2021+ file marks as GROUPS (#1029). The
+    definition record carries its kind in ``8315``: 0 a component, 1 a
+    group, 2 the quad behind an Image — the reader only keeps "image". It
+    hands each definition's records to ``_extract_geometry_from_nodes``
+    once, so that is where the kind is read; the root and the nested calls
+    carry no ``8315`` and pass straight through."""
+    try:
+        from openskp import _core
+    except Exception:  # noqa: BLE001
+        return False
+    original = getattr(_core, "_extract_geometry_from_nodes", None)
+    if original is None or getattr(original, "_notes_kinds", False) \
+            or not hasattr(_core, "extract_entity_id"):
+        return False
+
+    def _extract_geometry_from_nodes(elements, builder):
+        for el in elements:
+            if el.get("tag") == "8315":
+                kind = _core.parse_var_int(el["payload"], 0,
+                                           len(el["payload"]))
+                did = _core.extract_entity_id({"children": elements})
+                if did is not None:
+                    _parse_tables.kinds = True
+                    if kind == 1:
+                        if not hasattr(_parse_tables, "groups"):
+                            _parse_tables.groups = set()
+                        _parse_tables.groups.add(did)
+                break
+        return original(elements, builder)
+
+    _extract_geometry_from_nodes._notes_kinds = True
+    _core._extract_geometry_from_nodes = _extract_geometry_from_nodes
+    return True
+
+
+def group_definitions() -> set:
+    """The definition ids the last parse on this thread placed as GROUPS:
+    through a ``CGroup`` in a classic file, by the definition's own kind in
+    a 2021+ one."""
+    return set(getattr(_parse_tables, "groups", None) or ())
+
+
+def kinds_known(legacy: bool) -> bool:
+    """Whether the last parse told groups from components: for a classic
+    file when its group records are being noted (its instance records say
+    which), for a 2021+ one when its definitions carried their kind."""
+    if legacy:
+        try:
+            from openskp import legacy as L
+        except Exception:  # noqa: BLE001
+            return False
+        reader = (getattr(L, "_READERS", None) or {}).get("CGroup")
+        return bool(getattr(reader, "_notes_groups", False))
+    return bool(getattr(_parse_tables, "kinds", False))
+
+
+def reset_group_definitions() -> None:
+    """Forget the groups of the previous parse — call before parsing."""
+    _parse_tables.groups = set()
+    _parse_tables.kinds = False
 
 
 def _keep_layer_table() -> bool:
@@ -95,6 +204,14 @@ def _keep_layer_table() -> bool:
 
 #: Spellings of SketchUp's default tag: a face on it is on no layer.
 _DEFAULT_TAGS = ("Layer0", "Layer 0", "Untagged")
+
+
+def hidden_tags(names) -> frozenset:
+    """The hidden tags ``names`` as the geometry may carry them: by name, and
+    by the ids the last parse's table gives those names."""
+    names = set(names)
+    table = getattr(_parse_tables, "layers", None) or {}
+    return frozenset(names | {i for i, n in table.items() if n in names})
 
 
 def resolve_face_layers(model) -> int:
@@ -284,4 +401,24 @@ def _fix_definition_list_end(L) -> bool:
 
     _read_entity_list_inner._ends_at_tail = True
     L._read_entity_list_inner = _read_entity_list_inner
+    return True
+
+
+def _fix_layer_tail_2019(L) -> bool:
+    # A reader that already tells the versions apart in its layer record
+    # has the fix: leave it alone.
+    original = getattr(L, "_read_layer", None)
+    if (original is None or getattr(original, "_long_tail", False)
+            or "ver" in original.__code__.co_names):
+        return False
+
+    def _read_layer(ar, r):
+        rec = original(ar, r)
+        if getattr(ar, "ver", None) == 19 and r.peek(2) == b"\x00\x00":
+            r.raw(2)
+        return rec
+
+    _read_layer._long_tail = True
+    L._read_layer = _read_layer
+    L._READERS['CLayer'] = _read_layer
     return True
