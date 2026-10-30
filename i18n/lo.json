@@ -3192,5 +3192,9 @@
 "{n} scenes updated": "ອັບເດດ {n} ສາກແລ້ວ",
 "Tool cursor:": "ເຄີເຊີເຄື່ອງມື:",
 "The tool's icon": "ໄອຄອນຂອງເຄື່ອງມື",
-"Crosshair": "ເຄື່ອງໝາຍບວກ"
+"Crosshair": "ເຄື່ອງໝາຍບວກ",
+ "DWG import cancelled.": "ຍົກເລີກການນຳເຂົ້າ DWG ແລ້ວ.",
+ "The DWG conversion took too long and was stopped.": "ການແປງ DWG ໃຊ້ເວລາດົນເກີນໄປ ແລະ ຖືກຢຸດໄວ້.",
+ "The DWG converter could not convert this drawing.": "ຕົວແປງ DWG ບໍ່ສາມາດແປງແບບແຕ້ມນີ້ໄດ້.",
+ "Details: {details}": "ລາຍລະອຽດ: {details}"
 }

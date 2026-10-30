@@ -3192,5 +3192,9 @@
  "{n} scenes updated": "อัปเดต {n} ฉากแล้ว",
  "Tool cursor:": "เคอร์เซอร์เครื่องมือ:",
  "The tool's icon": "ไอคอนของเครื่องมือ",
- "Crosshair": "กากบาท"
+ "Crosshair": "กากบาท",
+ "DWG import cancelled.": "ยกเลิกการนำเข้า DWG แล้ว",
+ "The DWG conversion took too long and was stopped.": "การแปลง DWG ใช้เวลานานเกินไปจึงถูกหยุด",
+ "The DWG converter could not convert this drawing.": "ตัวแปลง DWG ไม่สามารถแปลงแบบนี้ได้",
+ "Details: {details}": "รายละเอียด: {details}"
 }

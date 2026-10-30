@@ -3189,5 +3189,9 @@
  "{n} scenes updated": "장면 {n}개 업데이트됨",
  "Tool cursor:": "도구 커서:",
  "The tool's icon": "도구 아이콘",
- "Crosshair": "십자선"
+ "Crosshair": "십자선",
+ "DWG import cancelled.": "DWG 가져오기를 취소했습니다.",
+ "The DWG conversion took too long and was stopped.": "DWG 변환이 너무 오래 걸려 중지했습니다.",
+ "The DWG converter could not convert this drawing.": "DWG 변환기가 이 도면을 변환하지 못했습니다.",
+ "Details: {details}": "세부 정보: {details}"
 }

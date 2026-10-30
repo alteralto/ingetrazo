@@ -3216,5 +3216,9 @@
   "{n} scenes updated": "Đã cập nhật {n} cảnh",
   "Tool cursor:": "Con trỏ công cụ:",
   "The tool's icon": "Biểu tượng của công cụ",
-  "Crosshair": "Dấu chữ thập"
+  "Crosshair": "Dấu chữ thập",
+  "DWG import cancelled.": "Đã hủy nhập DWG.",
+  "The DWG conversion took too long and was stopped.": "Quá trình chuyển đổi DWG mất quá nhiều thời gian và đã bị dừng.",
+  "The DWG converter could not convert this drawing.": "Trình chuyển đổi DWG không thể chuyển đổi bản vẽ này.",
+  "Details: {details}": "Chi tiết: {details}"
 }

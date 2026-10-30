@@ -3189,5 +3189,9 @@
   "{n} scenes updated": "{n} 個のシーンを更新しました",
   "Tool cursor:": "ツールのカーソル:",
   "The tool's icon": "ツールのアイコン",
-  "Crosshair": "十字カーソル"
+  "Crosshair": "十字カーソル",
+  "DWG import cancelled.": "DWG のインポートをキャンセルしました。",
+  "The DWG conversion took too long and was stopped.": "DWG の変換に時間がかかりすぎたため、停止しました。",
+  "The DWG converter could not convert this drawing.": "DWG コンバーターはこの図面を変換できませんでした。",
+  "Details: {details}": "詳細: {details}"
 }
