@@ -2296,11 +2296,50 @@ class Viewport(QOpenGLWidget):
             self._shown_projection = mode
             self.projectionChanged.emit(mode)
 
+    def _sync_depth_reach(self) -> None:
+        """Tell the camera what the view holds, for the depth range of a
+        parallel view (``OrbitCamera.parallel_depth``, issue #874): the
+        model's box, the reference images and figures, and the drawing
+        axes' origin. ``None`` — the old ±far range — while a base map or
+        a survey shows, whose extent the model's box does not know."""
+        cam = self.camera
+        if cam.perspective:
+            return                       # perspective does not read it
+        sc = self.scene
+        layer = getattr(sc, "tile_layer", None)
+        survey = getattr(sc, "photo_mesh", None)
+        if (layer is not None and getattr(layer, "visible", False)) \
+                or (survey is not None and getattr(survey, "visible", False)):
+            cam.depth_reach = None
+            return
+        from core import axes as _axes
+        lo, hi = sc.bounds()
+        pts = [_axes.ORIGIN]
+        if lo is not None:
+            pts += [lo, hi]
+        for im in getattr(sc, "image_planes", None) or ():
+            if sc.entity_visible(im):
+                pts.extend(im.corners())
+        for g in sc.groups:
+            if getattr(g, "billboard", False) and sc.entity_visible(g):
+                xf = g.xform
+                pts.append(QVector3D(xf.column(3).x(), xf.column(3).y(),
+                                     xf.column(3).z())
+                           if xf is not None else QVector3D())
+                pts.append(pts[-1] + QVector3D(0.0, 0.0, 3.0))
+        xs = [p.x() for p in pts]
+        ys = [p.y() for p in pts]
+        zs = [p.z() for p in pts]
+        a = QVector3D(min(xs), min(ys), min(zs))
+        b = QVector3D(max(xs), max(ys), max(zs))
+        cam.depth_reach = ((a + b) * 0.5, (b - a).length() * 0.5)
+
     def paintGL(self) -> None:
         self._tick = getattr(self, "_tick", 0) + 1     # a new epoch memo
         self._depth_clean = None          # see the read-back at the end
         self._sync_axes()
         self._sync_projection()
+        self._sync_depth_reach()
         if self._program is None:
             if self._gl is not None:          # a context below GL 3.3
                 self._gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
