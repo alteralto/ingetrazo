@@ -2968,6 +2968,12 @@ class _SheetItem(QGraphicsItem):
         self._resizing = False
         self._set_drag_cache(False)
         super().mouseReleaseEvent(event)
+        # A click that did not move keeps only the clicked item selected
+        # (Qt clears the rest on release), which dropped the partners the
+        # press had just pulled in: a grouped item clicked alone looked
+        # ungrouped and was moved alone (#1042). Bring the group back.
+        if self.isSelected() and getattr(self.model, "group_id", ""):
+            self.composer.sync_group_selection(self)
         if self._press_state is None:
             return
         current = {k: getattr(self.model, k) for k in self._press_state}
