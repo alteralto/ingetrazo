@@ -1851,6 +1851,11 @@ class MainWindow(QMainWindow):
 
         help_menu = menubar.addMenu(tr("Help"))
         help_menu.addAction(search_action)
+        docs_action = QAction(tr("Documentation"), self)
+        docs_action.setStatusTip(tr(
+            "Open the IngeTrazo documentation in the web browser."))
+        docs_action.triggered.connect(self._on_documentation)
+        help_menu.addAction(docs_action)
         help_menu.addSeparator()
         get_models_action = QAction(tr("Get more models and textures…"), self)
         get_models_action.setStatusTip(tr(
@@ -7380,6 +7385,12 @@ class MainWindow(QMainWindow):
         self.viewport.flash_status(
             tr("Click to place the component (Esc cancels)"), 4000)
         self.viewport.update()
+
+    DOCUMENTATION_URL = "https://ingetrazo-docs.pages.dev/"
+
+    def _on_documentation(self) -> None:
+        from core.desktop_open import open_url
+        open_url(self.DOCUMENTATION_URL)
 
     def _on_get_models(self) -> None:
         QMessageBox.information(
