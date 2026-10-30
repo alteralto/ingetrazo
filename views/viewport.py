@@ -5613,7 +5613,7 @@ class Viewport(QOpenGLWidget):
                         # «transported» into an opened file (issue #75).
                         "_billboard_world", "_placement_proxies",
                         "_placement_tops", "_arc_mid_by_mesh",
-                        "_billboard_extents")
+                        "_billboard_extents", "_figure_tokens")
 
     def reset_document_caches(self) -> None:
         """Forget the previous document's chunks at the document boundary.
@@ -7209,9 +7209,17 @@ class Viewport(QOpenGLWidget):
                     return id(ent) in (alive_e if isinstance(ent, Edge)
                                        else alive_f)
             else:
+                # A mesh the experimental engine has not built yet holds no
+                # Edge/Face object, so nothing can be alive in it: asking it
+                # built every lazy group of the villa (~0.5 s) on the first
+                # click inside an opened group (issue #1006). The active
+                # mesh — where a selection inside a group lives — first.
+                act = self.scene.mesh
                 gmeshes = [g.mesh for g in self._placements()
                            if self.scene.entity_visible(g)
-                           and not getattr(g, "billboard", False)]
+                           and not getattr(g, "billboard", False)
+                           and "_deferred" not in g.mesh.__dict__]
+                gmeshes.sort(key=lambda gm: gm is not act)
 
                 # A hidden face/edge the hidden view shows is selectable,
                 # and a selection it took must not be dropped here: a
@@ -7946,6 +7954,47 @@ class Viewport(QOpenGLWidget):
             return cam.eye() - anchor
         return cam.eye() - cam.target
 
+    def _figure_token(self, group):
+        """What a face-me figure's cached data (placed mesh, extent, draw
+        arrays) depends on: its OWN mesh — the object and a content
+        fingerprint (coordinates, paint, counts) — and its matrix. Unlike
+        the model's content version it does not move when something ELSE
+        is drawn or painted, or when a group is opened or closed: keyed on
+        that version, every edit re-triangulated the
+        villa's 18 vector-art figures (~4 s per stroke, paint or Esc,
+        issue #1006). The coordinate walk (~3 ms for 9 000 vertices) is
+        paid only when the figure's own mesh was edited."""
+        memo = getattr(self, "_figure_tokens", None)
+        if memo is None:
+            memo = self._figure_tokens = {}
+        mesh = group.mesh
+        cv = _content_ver(self)
+        xf = getattr(group, "xform", None)
+        # The matrix is read every time: a placement can be moved in place
+        # without a version bump (the face-me quad of a moved copy).
+        xft = None if xf is None else tuple(xf.data())
+        hit = memo.get(id(group))
+        if hit is not None and hit[0] == cv and hit[1] is mesh \
+                and hit[2] is group and hit[3][1] == xft:
+            return hit[3]
+        # Geometry moves only through the mesh's mutation primitives, which
+        # bump its serial: while it holds, the coordinate walk is skipped
+        # and only the paint — which bypasses them — is re-read (17 faces).
+        # The serial is not in the token itself: the experimental engine
+        # builds a lazy mesh on first touch (drawing elsewhere does it),
+        # bumping the serial of a figure whose content did not change.
+        serial = getattr(mesh, "_mut_serial", None)
+        if (hit is not None and hit[1] is mesh and serial is not None
+                and hit[4] == serial):
+            geo = hit[5]
+        else:
+            geo = self._mesh_fingerprint(mesh)
+        token = (id(mesh), xft, geo, self._faces_paint_fp(mesh))
+        if len(memo) > 4096:
+            memo.clear()
+        memo[id(group)] = (cv, mesh, group, token, serial, geo)
+        return token
+
     def _billboard_mesh(self, group):
         """A billboard's mesh in WORLD space. A face-me placed INSIDE a
         component — the torito on the arch, brought in with the arch —
@@ -7959,7 +8008,7 @@ class Viewport(QOpenGLWidget):
         cache = getattr(self, "_billboard_world", None)
         if cache is None:
             cache = self._billboard_world = {}
-        key = (id(group.mesh), tuple(xf.data()), _content_ver(self))
+        key = self._figure_token(group)
         hit = cache.get(id(group))
         if hit is not None and hit[0] == key:
             return hit[1]
@@ -7977,9 +8026,7 @@ class Viewport(QOpenGLWidget):
         file carries thousands of vertices, and the walk over them ran for
         every figure on every click (38 figures, ~250 ms per click on the
         villa of issue #1006)."""
-        xf = getattr(group, "xform", None)
-        key = (id(group.mesh), tuple(xf.data()) if xf is not None else None,
-               _content_ver(self))
+        key = self._figure_token(group)
         cache = getattr(self, "_billboard_extents", None)
         if cache is None:
             cache = self._billboard_extents = {}
@@ -8153,9 +8200,7 @@ class Viewport(QOpenGLWidget):
         cache = getattr(self, "_faceme_cache", None)
         if cache is None:
             cache = self._faceme_cache = {}
-        xf = getattr(g, "xform", None)
-        key = (_content_ver(self), id(self.scene.mesh),
-               None if xf is None else tuple(xf.data()))
+        key = self._figure_token(g)
         cur = cache.get(id(g))
         if cur is not None and cur[0] == key:
             return cur[1]
@@ -11568,6 +11613,29 @@ class Viewport(QOpenGLWidget):
         for v in mesh.vertices:
             p = v.position
             s += p.x() + p.y() * 1.000003 + p.z() * 1.000007
+        a = Viewport._faces_paint_fp(mesh)
+        soft = 0
+        hid = 0
+        for i, e in enumerate(mesh.edges):
+            if getattr(e, "soft", False):
+                soft += 1
+            if getattr(e, "hidden", False):
+                # Index-sensitive (not a count): Hide edge A + undo + hide
+                # edge B leaves the count equal while the baked edge VBO
+                # differs. Deterministic mix, no hash() — the disk digest
+                # reuses this term across runs.
+                hid ^= ((i + 1) * 2654435761) & 0xFFFFFFFF
+        fp = (len(mesh.vertices), len(mesh.edges), len(mesh.faces),
+              round(s, 4), a, soft, hid)
+        # Reverse Faces changes none of the above (#197): the mesh counts
+        # its flips, and only a flipped mesh carries the extra term.
+        wr = getattr(mesh, "_winding_rev", 0)
+        return fp + (("winding", wr),) if wr else fp
+
+    @staticmethod
+    def _faces_paint_fp(mesh) -> int:
+        """The paint term of :meth:`_mesh_fingerprint`: every face attr a
+        render bakes, mixed with the face's index."""
         a = 0
         for i, f in enumerate(mesh.faces):
             if f.attrs:
@@ -11590,23 +11658,7 @@ class Viewport(QOpenGLWidget):
                            f.attrs.get("opacity"),
                            repr(back) if back else None,
                            bool(f.attrs.get("hidden"))))
-        soft = 0
-        hid = 0
-        for i, e in enumerate(mesh.edges):
-            if getattr(e, "soft", False):
-                soft += 1
-            if getattr(e, "hidden", False):
-                # Index-sensitive (not a count): Hide edge A + undo + hide
-                # edge B leaves the count equal while the baked edge VBO
-                # differs. Deterministic mix, no hash() — the disk digest
-                # reuses this term across runs.
-                hid ^= ((i + 1) * 2654435761) & 0xFFFFFFFF
-        fp = (len(mesh.vertices), len(mesh.edges), len(mesh.faces),
-              round(s, 4), a, soft, hid)
-        # Reverse Faces changes none of the above (#197): the mesh counts
-        # its flips, and only a flipped mesh carries the extra term.
-        wr = getattr(mesh, "_winding_rev", 0)
-        return fp + (("winding", wr),) if wr else fp
+        return a
 
     def _group_fp(self, group):
         """Fingerprint of a group's mesh, memoised per scene version — the

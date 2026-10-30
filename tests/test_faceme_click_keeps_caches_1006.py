@@ -67,7 +67,9 @@ def test_a_selection_keeps_the_figure_triangulated(monkeypatch):
         vp.scene.clear_selection()
         assert vp._faceme_base(g) is first
         assert len(calls) == 1, "a click triangulated the figure again"
-        # an edit of the model does rebuild it
+        # an edit of the figure does rebuild it
+        f = g.mesh.faces[0]
+        f.attrs = dict(f.attrs, color=(0.1, 0.1, 0.1))
         vp.scene.version += 1
         assert vp._faceme_base(g) is not first
         assert len(calls) == 2
