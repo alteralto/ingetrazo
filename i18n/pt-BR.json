@@ -3272,5 +3272,6 @@
  "Filter rows": "Filtrar linhas",
  "Order by name": "Ordenar por nome",
  "Double-click to select its objects in the model": "Clique duas vezes para selecionar seus objetos no modelo",
- "Group — click to select it": "Grupo — clique para selecioná-lo"
+ "Group — click to select it": "Grupo — clique para selecioná-lo",
+ "Locked rows are not deleted: unlock them first": "Linhas bloqueadas não são excluídas: desbloqueie-as primeiro"
 }

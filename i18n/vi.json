@@ -3292,5 +3292,6 @@
  "Filter rows": "Lọc hàng",
  "Order by name": "Sắp theo tên",
  "Double-click to select its objects in the model": "Nhấp đúp để chọn các đối tượng của nó trong mô hình",
- "Group — click to select it": "Nhóm — bấm để chọn"
+ "Group — click to select it": "Nhóm — bấm để chọn",
+ "Locked rows are not deleted: unlock them first": "Các hàng đã khóa không bị xóa: hãy mở khóa trước"
 }

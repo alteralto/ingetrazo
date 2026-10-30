@@ -3265,5 +3265,6 @@
  "Filter rows": "Zeilen filtern",
  "Order by name": "Nach Name ordnen",
  "Double-click to select its objects in the model": "Doppelklick wählt ihre Objekte im Modell aus",
- "Group — click to select it": "Gruppe — klicken, um sie auszuwählen"
+ "Group — click to select it": "Gruppe — klicken, um sie auszuwählen",
+ "Locked rows are not deleted: unlock them first": "Gesperrte Zeilen werden nicht gelöscht: zuerst entsperren"
 }

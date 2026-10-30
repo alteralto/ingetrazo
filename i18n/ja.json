@@ -3265,5 +3265,6 @@
  "Filter rows": "行を絞り込む",
  "Order by name": "名前順",
  "Double-click to select its objects in the model": "ダブルクリックでモデル内のそのオブジェクトを選択",
- "Group — click to select it": "グループ — クリックで選択"
+ "Group — click to select it": "グループ — クリックで選択",
+ "Locked rows are not deleted: unlock them first": "ロックされた行は削除されません。先にロックを解除してください"
 }

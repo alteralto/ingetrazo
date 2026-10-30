@@ -269,7 +269,10 @@ def test_a_double_click_on_a_mark_never_opens_the_row():
         assert t.state() != t.State.EditingState
 
         rect = t.visualItemRect(_row(panel, building))
-        p = QPoint(t.columnViewportPosition(COL_NAME) + 80, rect.center().y())
+        # Into the name, past its icon — inside the viewport, which the
+        # window's first size can leave narrower than the Name column.
+        p = QPoint(min(t.columnViewportPosition(COL_NAME) + 80,
+                       t.viewport().width() - 8), rect.center().y())
         QTest.mouseClick(t.viewport(), Qt.LeftButton, Qt.NoModifier, p)
         double = QMouseEvent(QEvent.MouseButtonDblClick, QPointF(p),
                              QPointF(t.viewport().mapToGlobal(p)),
@@ -536,3 +539,44 @@ def test_a_section_plane_row_is_deleted_too():
 
 def _is_gone(panel, group) -> bool:
     return id(group) not in panel._items
+
+
+def test_delete_leaves_a_locked_row_and_what_a_locked_group_holds():
+    """A locked group cannot be picked, selected or opened — nor deleted:
+    its row picked in the tree (where a locked row still can be) stays
+    when Delete removes the others, and so does a part of it."""
+    building, tree = _building()
+    level1 = building.children[0]
+    wall = level1.children[0]
+    building.locked = True
+    win, scene, panel = _window_with(building, tree)
+    try:
+        steps = len(win.viewport.history.undo_stack)
+        panel.delete_rows([_row(panel, building), _row(panel, wall),
+                           _row(panel, tree)])
+        _app.processEvents()
+        assert building in scene.groups
+        assert wall in level1.children
+        assert tree not in scene.groups            # the unlocked one goes
+        assert len(win.viewport.history.undo_stack) == steps + 1
+        panel.delete_parts([building])             # the context menu's way
+        _app.processEvents()
+        assert building in scene.groups
+        assert len(win.viewport.history.undo_stack) == steps + 1
+    finally:
+        _close(win)
+
+
+def test_delete_leaves_a_group_holding_a_locked_one():
+    """Deleting a group takes what it holds: one holding a locked group
+    stays, or the locked one would go with it."""
+    building, tree = _building()
+    level1 = building.children[0]
+    level1.children[1].locked = True               # the slab
+    win, scene, panel = _window_with(building, tree)
+    try:
+        panel.delete_rows([_row(panel, building)])
+        _app.processEvents()
+        assert building in scene.groups
+    finally:
+        _close(win)

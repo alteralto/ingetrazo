@@ -3268,5 +3268,6 @@
  "Filter rows": "ກັ່ນຕອງແຖວ",
  "Order by name": "ຮຽງຕາມຊື່",
  "Double-click to select its objects in the model": "ຄລິກສອງເທື່ອເພື່ອເລືອກວັດຖຸຂອງມັນໃນແບບຈຳລອງ",
- "Group — click to select it": "ກຸ່ມ — ຄລິກເພື່ອເລືອກ"
+ "Group — click to select it": "ກຸ່ມ — ຄລິກເພື່ອເລືອກ",
+ "Locked rows are not deleted: unlock them first": "ແຖວທີ່ລັອກຈະບໍ່ຖືກລຶບ: ປົດລັອກກ່ອນ"
 }

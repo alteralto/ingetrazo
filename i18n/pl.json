@@ -3273,5 +3273,6 @@
  "Filter rows": "Filtruj wiersze",
  "Order by name": "Sortuj według nazwy",
  "Double-click to select its objects in the model": "Kliknij dwukrotnie, aby zaznaczyć jej obiekty w modelu",
- "Group — click to select it": "Grupa — kliknij, aby ją zaznaczyć"
+ "Group — click to select it": "Grupa — kliknij, aby ją zaznaczyć",
+ "Locked rows are not deleted: unlock them first": "Zablokowane wiersze nie są usuwane: najpierw je odblokuj"
 }

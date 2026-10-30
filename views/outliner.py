@@ -3022,6 +3022,24 @@ class OutlinerPanel(QWidget):
         # A part picked with the group around it travels with the group.
         moving = outliner.topmost(scene.groups, [g for g in groups
                                                  if g is not None])
+        # Locked is «cannot be picked, selected or opened», and a locked
+        # row can still be picked in the tree: it stays, with a group
+        # around it locked, or holding a locked one that would go with it.
+        up = outliner.parents(scene.groups)
+
+        def locked(g) -> bool:
+            p = g
+            while p is not None:
+                if getattr(p, "locked", False):
+                    return True
+                p = up.get(id(p))
+            return any(getattr(k, "locked", False)
+                       for k, _p, _d in outliner.walk(g.children or ()))
+        kept = [g for g in moving if locked(g)]
+        if kept:
+            moving = [g for g in moving if not locked(g)]
+            self._window.viewport.flash_status(tr(
+                "Locked rows are not deleted: unlock them first"), 3500)
         planes = [p for p in planes if p is not None]
         cmds = [DeleteGroupCommand(g) for g in moving]
         if planes:

@@ -3266,5 +3266,6 @@
  "Filter rows": "筛选行",
  "Order by name": "按名称排序",
  "Double-click to select its objects in the model": "双击以在模型中选择其对象",
- "Group — click to select it": "组 — 单击以选择"
+ "Group — click to select it": "组 — 单击以选择",
+ "Locked rows are not deleted: unlock them first": "锁定的行不会被删除：请先解锁"
 }

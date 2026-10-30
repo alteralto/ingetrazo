@@ -3268,5 +3268,6 @@
  "Filter rows": "กรองแถว",
  "Order by name": "เรียงตามชื่อ",
  "Double-click to select its objects in the model": "ดับเบิลคลิกเพื่อเลือกวัตถุของมันในโมเดล",
- "Group — click to select it": "กลุ่ม — คลิกเพื่อเลือก"
+ "Group — click to select it": "กลุ่ม — คลิกเพื่อเลือก",
+ "Locked rows are not deleted: unlock them first": "แถวที่ล็อกไว้จะไม่ถูกลบ: ปลดล็อกก่อน"
 }
