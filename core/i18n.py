@@ -31,7 +31,7 @@ LANGUAGE_NAMES = {"en": "English", "es": "Español",
                   "id": "Bahasa Indonesia", "fr": "Français", "de": "Deutsch",
                   "pl": "Polski", "ru": "Русский", "vi": "Tiếng Việt",
                   "lo": "ລາວ", "th": "ไทย",
-                  "ja": "日本語", "ko": "한국어"}
+                  "ja": "日本語", "ko": "한국어", "uk": "Українська"}
 
 #: The saved choice that follows the operating system's language (#818);
 #: also what an unset choice means.
