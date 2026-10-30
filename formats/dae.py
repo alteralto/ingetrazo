@@ -65,8 +65,8 @@ def _tag(el) -> str:
 # library node may place the next one twice: each level doubles the copies,
 # so a 3 KB file asked for 2^32 placements and the import never ended (17
 # levels already took 20 s). Real models stay far below: the Yanque
-# examples place about 60 nodes, a city exported from SketchUp some
-# hundreds of thousands.
+# examples place about 60 nodes, a whole city exported from another
+# modeller some hundreds of thousands.
 _MAX_PLACEMENTS = 1_000_000
 
 
