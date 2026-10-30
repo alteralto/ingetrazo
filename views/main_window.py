@@ -388,7 +388,9 @@ class MainWindow(QMainWindow):
         self._doc.viewport = self._make_viewport()
         self._doc_stack.addWidget(self._doc.viewport)
         bar.add(self._doc)
-        self.setCentralWidget(area)
+        # Qt's own call: this class's setCentralWidget is the one extensions
+        # see (one project's place in the stack), see centralWidget below.
+        QMainWindow.setCentralWidget(self, area)
         # The window's child that tray drags restack is now this area,
         # not the viewport (eventFilter: ZOrderChange).
         area.installEventFilter(self)
@@ -6225,7 +6227,7 @@ class MainWindow(QMainWindow):
             return
         self._leave_document(self._doc)
         self._doc = doc
-        self._doc_stack.setCurrentWidget(doc.viewport)
+        self._doc_stack.setCurrentWidget(doc.slot_widget())
         bar.set_current(doc)
         self._enter_document(doc)
 
@@ -6390,7 +6392,83 @@ class MainWindow(QMainWindow):
             self._doc_stack.removeWidget(vp)
             vp.hide()
             vp.deleteLater()
+        stand_in, doc.stand_in = doc.stand_in, None
+        if stand_in is not None:
+            self._doc_stack.removeWidget(stand_in)
+            stand_in.hide()
         self._update_title()
+
+    # ---- The central widget as extensions see it (#1066) ---------------------
+    # Extensions written before the project tabs take it for granted that
+    # the window's central widget IS the viewport: MultiView checks
+    # ``centralWidget() is app.viewport``, takes it with
+    # ``takeCentralWidget()`` and puts its grid of views, holding that
+    # viewport, in its place with ``setCentralWidget()`` — then the reverse.
+    # With the tab bar over a stack of viewports the real central widget is
+    # that area, and handing it over would drop the tabs and every other
+    # project. So, for Python callers (Qt itself never goes through these),
+    # the three calls work on ONE project's place in the stack: the project
+    # an extension has replaced, else the one in front. The tabs keep
+    # working meanwhile; each project shows whatever stands in its place.
+    def _central_document(self):
+        for doc in self._documents:
+            if doc.stand_in is not None:
+                return doc
+        return self._doc
+
+    def _tabs_in_place(self) -> bool:
+        area = self.__dict__.get("_doc_area")
+        return area is not None and QMainWindow.centralWidget(self) is area
+
+    def centralWidget(self):  # noqa: N802 — Qt API
+        if not self._tabs_in_place():
+            return super().centralWidget()
+        return self._central_document().slot_widget()
+
+    def takeCentralWidget(self):  # noqa: N802 — Qt API
+        """Hand the project's widget over, like Qt does (no parent, not
+        deleted); a blank placeholder keeps its place in the stack until
+        :meth:`setCentralWidget` fills it."""
+        if not self._tabs_in_place():
+            return super().takeCentralWidget()
+        doc = self._central_document()
+        old = doc.slot_widget()
+        if old is None or getattr(old, "_central_placeholder", False):
+            return None
+        hold = QWidget()
+        hold._central_placeholder = True
+        self._put_in_slot(doc, old, hold)
+        old.setParent(None)
+        return old
+
+    def setCentralWidget(self, widget):  # noqa: N802 — Qt API
+        if not self._tabs_in_place():
+            return super().setCentralWidget(widget)
+        # A project's own viewport goes back to ITS place, whichever tab is
+        # in front; anything else fills the place that was taken.
+        doc = next((d for d in self._documents if d.viewport is widget),
+                   None) or self._central_document()
+        old = doc.slot_widget()
+        if widget is old:
+            return
+        self._put_in_slot(doc, old, widget)
+        # Qt deletes a central widget that was not taken first; never a
+        # viewport, though: that one lives as long as its project.
+        if old is not None and not any(d.viewport is old for d in self._documents):
+            old.hide()
+            old.deleteLater()
+
+    def _put_in_slot(self, doc, old, new) -> None:
+        stack = self._doc_stack
+        index = stack.indexOf(old) if old is not None else -1
+        if index < 0:
+            index = stack.count()
+        stack.insertWidget(index, new)
+        if old is not None and stack.indexOf(old) >= 0:
+            stack.removeWidget(old)
+        doc.stand_in = None if new is doc.viewport else new
+        if doc is self._doc:
+            stack.setCurrentWidget(new)
 
     # ---- Extension workspaces (ExtensionApp.enter_workspace) ----------------
     def enter_workspace(self, workspace) -> bool:
