@@ -194,10 +194,15 @@ def _open_document_in(window, doc: "Path") -> None:
             or ext in getattr(window, "file_openers", {})):
         # Projects in tabs (#1066): the document comes in a tab of its own
         # (or its tab comes to the front), so nothing is discarded and
-        # nothing needs asking. After the first paint: a big file parses
-        # for seconds and the window must be visible, not frozen pre-show.
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(0, lambda: window.open_path(doc))
+        # nothing needs asking. An .skp after the first paint, as below (a
+        # big one parses for seconds); the rest at once — a cold start
+        # queues the units question right after this call, and it must not
+        # come up in the middle of the load.
+        if ext == ".skp":
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(0, lambda: window.open_path(doc))
+        else:
+            window.open_path(doc)
         return
     if ext == ".igz" or ext in getattr(window, "file_openers", {}):
         # A document REPLACES the drawing this window holds. File ▸ Open

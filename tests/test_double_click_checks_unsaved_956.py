@@ -136,7 +136,7 @@ def test_the_drawing_comes_in_a_tab_and_the_unsaved_one_stays(
                             lambda box: asked.append(box))
         mine = win.active_document()
         _open_document_in(win, doc)
-        _app.processEvents()                     # it opens after the paint
+        _app.processEvents()
         assert asked == []
         assert len(win.documents()) == 2
         assert win._current_path == doc
