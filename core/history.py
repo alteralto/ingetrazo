@@ -195,6 +195,11 @@ class History:
         #: object or two, and the reader need not go through the 21 406
         #: others again (#158). The reader sets its own entry.
         self.groups_cv: dict = {}
+        #: The same, for the BIM takeoff (views/tray.py BimPanel): commands
+        #: that keep paint keep every face's and group's tags too, so a
+        #: takeoff that found nothing tagged still finds nothing — a Move
+        #: on the plant of #158 need not walk its 21 406 groups for tags.
+        self.tags_cv = None
 
     def _keep_paint_cv(self, cmd, before) -> None:
         if before is None:
@@ -208,6 +213,8 @@ class History:
                 self.paint_cv = cv
             if self.rows_cv == before:
                 self.rows_cv = cv
+            if self.tags_cv == before:
+                self.tags_cv = cv
         for k, v in self.groups_cv.items():
             if v == before:
                 self.groups_cv[k] = cv
