@@ -350,18 +350,19 @@ def _implicit_uvw(face, tex, minv):
             gv.x(), gv.y(), gv.z(), float(cv)]
 
 
-def _remap_uvws(mesh, m) -> None:
+def _remap_uvws(mesh, m, faces=None) -> None:
     """Rewrite each face's world→UV affine map (``uvw``) so that evaluating
     it at the TRANSFORMED positions reproduces the prototype's UVs:
     g' = L⁻ᵀ·g, c' = c − g'·t. A face still on the implicit planar
     projection gets that projection materialised first (at its
     pre-transform pose), so it turns WITH the geometry instead of being
-    re-projected onto the turned face."""
+    re-projected onto the turned face. ``faces`` limits it to those faces
+    of the mesh (loose geometry, where only part of the mesh moved)."""
     minv, ok = m.inverted()
     if not ok:
         return
     tx, ty, tz = m(0, 3), m(1, 3), m(2, 3)
-    for f in mesh.faces:
+    for f in (mesh.faces if faces is None else faces):
         t = f.attrs.get("texture") if f.attrs else None
         uvw = t.get("uvw") if t else None
         if not uvw or len(uvw) != 8:

@@ -1092,7 +1092,8 @@ class MoveTool(Tool):
             commands = []
             commands.extend(MoveGroupCommand(g, delta) for g in self._groups)
             if self._positions:
-                commands.append(MoveVerticesCommand(self._positions, delta))
+                commands.append(MoveVerticesCommand(self._positions, delta,
+                                                     carry_textures=True))
             if self._labels:
                 commands.append(MoveTextLabelsCommand(self._labels, delta))
             if self._moved_guides:
