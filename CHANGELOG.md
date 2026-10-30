@@ -6,6 +6,18 @@ follow [SemVer](https://semver.org).
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Oclusión ambiental más suave y natural** (#1060): los rincones
+  interiores ya no salen como barras casi negras. El pase mide los
+  horizontes de cada punto e integra el cielo visible con peso coseno
+  (Jimenez et al., 2016), la luz que rebotan las paredes aclara los
+  rincones claros y deja marcados los oscuros, y el peso de cada superficie
+  baja con la distancia; un segundo desenfoque deja el degradado liso. La
+  Intensidad es lineal (1 es el valor físico, 2 lo duplica) y la Distancia
+  se ajusta con un deslizador como la Intensidad, de 1 cm a 50 m, con la
+  unidad en la etiqueta.
+
 ### Arreglado
 
 - **La oclusión ambiental ya no pinta bandas verticales** en caras planas

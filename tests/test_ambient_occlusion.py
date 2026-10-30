@@ -203,6 +203,90 @@ def test_a_flat_face_seen_obliquely_gets_no_vertical_bands(
     assert np.ptp(region) < 4.0, (region.min(), region.max(), region.mean())
 
 
+@pytest.fixture
+def corner_blocks():
+    """Two blocks meeting in an inner vertical corner, the view of the
+    0.5.11 round: a block hanging against the side of a taller one. Returns
+    a function that builds it with the faces in the colour given."""
+    from core.materials import Material
+    from views.main_window import MainWindow
+    wins = []
+
+    def build(color):
+        win = MainWindow()
+        wins.append(win)
+        win.resize(1000, 800)
+        win.show()
+        _app.processEvents()
+        vp = win.viewport
+        if getattr(vp, "_gl", None) is None or not vp.isValid():
+            pytest.skip("no OpenGL context on this platform")
+        V = QVector3D
+        attrs = Material("pared", color=color).face_attrs()
+
+        def box(x0, x1, y0, y1, z0, z1):
+            p = [V(x0, y0, z0), V(x1, y0, z0), V(x1, y1, z0),
+                 V(x0, y1, z0), V(x0, y0, z1), V(x1, y0, z1),
+                 V(x1, y1, z1), V(x0, y1, z1)]
+            for idx in ((4, 5, 6, 7), (0, 3, 2, 1), (0, 1, 5, 4),
+                        (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)):
+                vp.scene.mesh.add_face([p[i] for i in idx]).attrs.update(attrs)
+
+        box(0, 3, 0, 3, 0, 3.5)
+        box(-3, 0, -1.5, 1.5, 1.2, 3.5)
+        vp.scene.version += 1
+        vp.camera.yaw = math.radians(-60.0)
+        vp.camera.pitch = math.radians(12.0)
+        vp.camera.fit_to(V(-3, -1.5, 0), V(3, 3, 3.5))
+        for _ in range(5):
+            _app.processEvents()
+        vp.camera.set_aspect(1000, 800)
+        return vp
+
+    try:
+        yield build
+    finally:
+        for win in wins:
+            win._saved_version = win.viewport.scene.version
+            win.close()
+
+
+def _corner_light(vp, monkeypatch) -> float:
+    """How much light the darkest of the corner keeps, on over off."""
+    off = _render_at(vp, monkeypatch, "0", 1000, 800)
+    on = _render_at(vp, monkeypatch, "1", 1000, 800)
+    if getattr(vp, "_ao", None) is not None and vp._ao.broken:
+        pytest.skip(f"this driver refuses the pass: {vp._ao.broken}")
+    lit = off > 20
+    return float(np.percentile(on[lit] / off[lit], 0.1))
+
+
+def test_a_light_inner_corner_is_a_soft_grey_not_a_black_bar(
+        corner_blocks, monkeypatch):
+    """The 0.5.11 contrast curve, ao^(2.5 * intensity), sent a 90-degree
+    corner down to half its light in a hard bar. Measured as horizons and
+    with the light its walls bounce, a light corner keeps most of it."""
+    light = _corner_light(corner_blocks((0.85, 0.85, 0.82)), monkeypatch)
+    assert 0.6 < light < 0.85, light
+
+
+def test_a_dark_corner_stays_darker_than_a_light_one(
+        corner_blocks, monkeypatch):
+    """The bounce follows the face's colour: dark walls pass on little
+    light, so their corner keeps more of its darkening."""
+    light = _corner_light(corner_blocks((0.85, 0.85, 0.82)), monkeypatch)
+    dark = _corner_light(corner_blocks((0.25, 0.25, 0.25)), monkeypatch)
+    assert dark < light - 0.05, (dark, light)
+
+
+def test_intensity_zero_leaves_the_picture_untouched(
+        box_on_floor, monkeypatch):
+    vp = box_on_floor
+    off = _render(vp, monkeypatch, "0")
+    monkeypatch.setenv("INGETRAZO_AO_INTENSITY", "0")
+    assert np.array_equal(_render(vp, monkeypatch, "1"), off)
+
+
 # ---- The style's switch (Styles panel) -------------------------------------
 
 def test_the_style_carries_it_and_every_preset_has_it_off():
@@ -248,10 +332,56 @@ def test_the_panel_switch_edits_the_active_style():
         panel._ao.setChecked(True)
         assert style.ambient_occlusion and panel._ao_dist.isEnabled()
         panel._ao_int.setValue(15)
-        panel._ao_dist.setValue(2.0)
+        panel._ao_dist.setValue(panel._ao_dist_pos(2.0))
         assert style.ao_intensity == 1.5 and style.ao_distance == 2.0
         panel._ao.setChecked(False)
         assert not style.ambient_occlusion and not panel._ao_int.isEnabled()
+    finally:
+        win._saved_version = win.viewport.scene.version
+        win.close()
+
+
+def test_the_distance_is_a_slider_with_its_value_like_the_intensity():
+    """The distance is set like the intensity: a slider and its value as
+    text, nothing to type. The slider is on a log scale over the whole
+    range and writes round values; a value from a file between two steps
+    is kept until the slider moves."""
+    from PySide6.QtWidgets import QLabel, QSlider
+    from core import units
+    from core.style import AO_DISTANCE_RANGE
+    from views.main_window import MainWindow
+    win = MainWindow()
+    try:
+        panel = win.styles_panel
+        style = win.viewport.scene.display_style
+        sl = panel._ao_dist
+        assert isinstance(sl, QSlider)
+        assert isinstance(panel._ao_dist_val, QLabel)
+        panel.refresh()
+        assert not sl.isEnabled()                    # follows the switch
+        panel._ao.setChecked(True)
+        assert sl.isEnabled()
+        sl.setValue(sl.minimum())
+        assert style.ao_distance == AO_DISTANCE_RANGE[0]
+        sl.setValue(sl.maximum())
+        assert style.ao_distance == AO_DISTANCE_RANGE[1]
+        # The middle of the travel is near a metre, not 25 m.
+        sl.setValue((sl.minimum() + sl.maximum()) // 2)
+        assert 0.3 < style.ao_distance < 1.5, style.ao_distance
+        # Both values read alike: a bare number, two decimals, the unit
+        # once, in the label.
+        assert panel._ao_dist_val.text() == units.localized(
+            f"{units.length_number(style.ao_distance, units.model_unit()):.2f}")
+        assert panel._ao_int_val.text() == units.localized("1.00")
+        assert "(" in panel._ao_dist_lbl.text()
+        # The default lands on a step: 0.5 m reads as 0.5 m.
+        assert panel._ao_dist_at(panel._ao_dist_pos(0.5)) == 0.5
+        # A value off the steps, from a file: shown and kept as it is.
+        style.ao_distance = 0.37
+        panel.refresh()
+        assert style.ao_distance == 0.37
+        panel._ao_int.setValue(12)                   # another edit
+        assert style.ao_distance == 0.37
     finally:
         win._saved_version = win.viewport.scene.version
         win.close()
@@ -299,7 +429,8 @@ def test_the_sky_round_a_silhouette_is_never_darkened(monkeypatch):
             pytest.skip(f"this driver refuses the pass: {vp._ao.broken}")
         sky = empty == off
         assert sky.mean() > 0.3
-        assert (off - on > 8).mean() > 0.0005      # the corners still darken
+        # Softly since the horizons and the bounce, but they do.
+        assert (off - on > 2).mean() > 0.0005      # the corners still darken
         assert np.array_equal(on[sky], off[sky])
     finally:
         win._saved_version = win.viewport.scene.version
