@@ -386,6 +386,9 @@ class MainWindow(QMainWindow):
         self._doc_stack.addWidget(self._doc.viewport)
         bar.add(self._doc)
         self.setCentralWidget(area)
+        # The window's child that tray drags restack is now this area,
+        # not the viewport (eventFilter: ZOrderChange).
+        area.installEventFilter(self)
 
         self._extension_docks: list = []   # side panels added by plugins
         self._build_toolbar()
@@ -2306,7 +2309,8 @@ class MainWindow(QMainWindow):
         # ZOrderChange: a tab dragged along a tray's bar restacks the
         # window's children, the view comes out above the handles and its
         # OpenGL hides the half of them that lies over it.
-        if obj is getattr(self, "viewport", None) and event.type() in (
+        if (obj is getattr(self, "viewport", None)
+                or obj is getattr(self, "_doc_area", None)) and event.type() in (
                 QEvent.Resize, QEvent.Move, QEvent.Show,
                 QEvent.ZOrderChange):
             self._place_clean_screen_exit()
