@@ -245,6 +245,24 @@ def test_panels_forget_what_they_drew_for_the_other_project(win):
     assert win.project_browser.outliner._scene() is win.viewport.scene
 
 
+def test_materials_let_go_of_the_meshes_of_the_project_left(win):
+    """Materials remembers what each mesh wears; kept across a switch it
+    held a closed project's whole geometry (2 722 meshes of the SPR)."""
+    from core.group import Group
+    from core.mesh import Mesh
+    m = Mesh()
+    m.add_face([V(0, 0, 0), V(1, 0, 0), V(1, 1, 0), V(0, 1, 0)])
+    win.viewport.scene.groups.append(Group(m, "box"))
+    win.viewport.scene.version += 1
+    win._saved_version = -1
+    panel = win.tray.materials
+    panel.refresh_in_model()
+    assert any(hit[0] is m for hit in panel._worn_by_mesh.values())
+    win._on_new()
+    worn = panel._worn_by_mesh or {}
+    assert not any(hit[0] is m for hit in worn.values())
+
+
 def test_view_preferences_reach_the_tabs_behind(win):
     from views.preferences_dialog import PreferencesDialog
     _edit(win)
@@ -537,3 +555,27 @@ def test_copy_in_one_project_paste_in_another(win):
     # A second paste reuses the adopted copy, no new decoding.
     win._sync_foreign_clipboard()
     assert b.clipboard is clip
+
+
+def test_hovering_a_tab_behind_shows_its_picture(win):
+    from PySide6.QtCore import QPoint
+    from PySide6.QtGui import QColor, QHelpEvent, QImage
+    _edit(win)
+    a = win.active_document()
+    win._on_new()
+    img = QImage(280, 160, QImage.Format_RGB32)
+    img.fill(QColor(200, 30, 30))
+    a.thumbnail = img
+    win.show()
+    _settle()
+    bar = win._project_tabs
+    tabs = bar.tabs
+    for i, wanted in ((0, True), (1, False)):     # behind / in front
+        centre = tabs.tabRect(i).center()
+        ev = QHelpEvent(QHelpEvent.ToolTip, centre,
+                        tabs.mapToGlobal(centre))
+        QApplication.sendEvent(tabs, ev)
+        shown = bar._preview is not None and bar._preview.isVisible()
+        assert shown is wanted
+    bar._hide_preview()
+    win.hide()

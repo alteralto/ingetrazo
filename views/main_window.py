@@ -6174,15 +6174,38 @@ class MainWindow(QMainWindow):
         except RuntimeError:            # its widget is already gone
             return
         vp._last_pos = None
+        doc.thumbnail = self._tab_thumbnail(vp)
         comp = doc.composer
         doc.composer_shown = bool(comp is not None and comp.isVisible())
         if doc.composer_shown:
             comp.hide()
 
+    #: Width of the picture a tab in the back shows on hover (px).
+    TAB_PREVIEW_PX = 280
+
+    def _tab_thumbnail(self, vp):
+        """The frame the viewport shows as its tab is left, small: the
+        picture of the project on hover over its tab (one frame drawn
+        again, as the view stands); None off screen."""
+        try:
+            if not vp.isVisible() or not vp.isValid():
+                return None
+            img = vp.grabFramebuffer()
+        except Exception:  # noqa: BLE001 — a missing picture only
+            return None
+        if img.isNull():
+            return None
+        from PySide6.QtCore import Qt as _Qt
+        return img.scaledToWidth(self.TAB_PREVIEW_PX,
+                                 _Qt.SmoothTransformation)
+
     #: Panel caches keyed by the scene's content version: two projects can
     #: be at the same number, so a switch forgets them all.
     _VERSION_CACHES = ("_in_model_cv", "_counted_version", "_drawn_signature",
-                       "_swatch_sig")
+                       "_swatch_sig",
+                       # …and what Materials remembers of each mesh: it held
+                       # a closed project's 2 722 meshes (the SPR, ~2.5 GB).
+                       "_worn_by_mesh")
 
     def _forget_panel_caches(self) -> None:
         from PySide6.QtCore import QObject
