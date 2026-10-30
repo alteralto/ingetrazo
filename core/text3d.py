@@ -364,8 +364,28 @@ def text_frame(group):
     return QMatrix4x4()
 
 
+def _legacy_back(group) -> float:
+    """Where the BACK face of letters laid out the older way sits, in the
+    text's frame: those grew their thickness toward +Y from the front at
+    y=0, so the back is at y=+thickness. 0.0 for letters laid out the
+    current way (back at y=0, thickness toward -Y)."""
+    ys = [v.position.y() for k in (getattr(group, "children", None) or ())
+          for v in k.mesh.vertices]
+    if ys and min(ys) > -1e-9 and max(ys) > 1e-9:
+        return max(ys)
+    return 0.0
+
+
 def rebuild_text_group(group, params: dict) -> list:
     """The letters for ``params`` laid out where ``group``'s current letters
     are — the new ``children`` list, NOT yet assigned (the command that
-    swaps them keeps the old list for undo)."""
-    return _letter_groups(params, xform=text_frame(group))
+    swaps them keeps the old list for undo).
+
+    A text from an older document keeps its back face where it was: the
+    frame shifts by the old thickness, so re-editing it does not make the
+    sign jump off (or into) the face it hangs on."""
+    frame = text_frame(group)
+    back = _legacy_back(group)
+    if back:
+        frame.translate(0.0, back, 0.0)
+    return _letter_groups(params, xform=frame)

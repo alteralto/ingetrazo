@@ -381,3 +381,32 @@ def test_edit_3d_text_refuses_a_text_edited_by_hand():
         _text3d_dialog=lambda params=None: opened.append(params) or None)
     MainWindow._on_edit_3d_text(win, g)
     assert flashed and not opened
+
+
+def test_a_text_from_an_older_document_keeps_its_back_face_on_re_edit():
+    """Letters laid out the older way (thickness toward +Y, back at
+    y=+thickness) keep their back face where it was when the text is
+    re-edited, instead of jumping by the thickness."""
+    from core.group import placement_points
+
+    scene = Scene()
+    history = History(scene)
+    g = make_text_group(text_params("A", "Sans", height=0.25, thickness=0.05))
+    for k in g.children:                     # the older layout: y in [0, t]
+        for v in k.mesh.vertices:
+            v.position = QVector3D(v.position.x(), v.position.y() + 0.05,
+                                   v.position.z())
+    scene.groups.append(g)
+    ys = placement_points(g)[:, 1]
+    assert abs(float(ys.min())) < 1e-6 and abs(float(ys.max()) - 0.05) < 1e-6
+
+    history.execute(EditText3DCommand(
+        g, text_params("A", "Sans", height=0.25, thickness=0.10)))
+    ys = placement_points(g)[:, 1]
+    assert abs(float(ys.max()) - 0.05) < 1e-6          # the back stayed put
+    assert abs(float(ys.min()) - (0.05 - 0.10)) < 1e-6  # the front moved out
+
+    history.execute(EditText3DCommand(        # laid out the current way now
+        g, text_params("A", "Sans", height=0.25, thickness=0.02)))
+    ys = placement_points(g)[:, 1]
+    assert abs(float(ys.max()) - 0.05) < 1e-6
