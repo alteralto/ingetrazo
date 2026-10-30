@@ -794,6 +794,8 @@ ENV_KEYS = {
     "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
     "openrouter": ("OPENROUTER_API_KEY",),
     "deepseek": ("DEEPSEEK_API_KEY",),
+    # The variable OpenCode's own client reads for its hosted models.
+    "opencode": ("OPENCODE_API_KEY",),
 }
 
 
