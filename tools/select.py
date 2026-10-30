@@ -182,6 +182,24 @@ def _box_group_fast(viewport, group, rect, crossing):
     return bool(ok.all() and inside.all())
 
 
+def _frame_projector(viewport):
+    """``viewport._world_to_pixel`` with this frame's projection*view built
+    once: the box walks every vertex of the groups it cannot test from
+    their chunks (face-me figures), and rebuilding the camera matrices for
+    each point cost ~1.6 s of a 3 s box on the villa of issue #1006. Same
+    math, same pixels."""
+    w2p = viewport._world_to_pixel
+    cam = getattr(viewport, "camera", None)
+    try:
+        import inspect
+        if "mvp" not in inspect.signature(w2p).parameters:
+            return w2p
+        mvp = cam.projection_matrix() * cam.view_matrix()
+    except (AttributeError, TypeError, ValueError):
+        return w2p                      # a stand-in viewport (tests)
+    return lambda point: w2p(point, mvp)
+
+
 def _pt_in_rect(p, rect) -> bool:
     return rect[0] <= p[0] <= rect[2] and rect[1] <= p[1] <= rect[3]
 
@@ -439,7 +457,7 @@ class SelectTool(Tool):
 
     def on_box_select(self, viewport, rect, crossing: bool,
                       additive: bool = False, mode: str | None = None) -> None:
-        w2p = viewport._world_to_pixel
+        w2p = _frame_projector(viewport)
         picked = []
         fast = _box_loose_fast(viewport, rect, crossing)
         if fast is not None:

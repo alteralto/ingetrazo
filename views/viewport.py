@@ -5487,7 +5487,8 @@ class Viewport(QOpenGLWidget):
                         # one's address met its entry — the scale figure
                         # «transported» into an opened file (issue #75).
                         "_billboard_world", "_placement_proxies",
-                        "_placement_tops", "_arc_mid_by_mesh")
+                        "_placement_tops", "_arc_mid_by_mesh",
+                        "_billboard_extents")
 
     def reset_document_caches(self) -> None:
         """Forget the previous document's chunks at the document boundary.
@@ -7768,7 +7769,7 @@ class Viewport(QOpenGLWidget):
         cache = getattr(self, "_billboard_world", None)
         if cache is None:
             cache = self._billboard_world = {}
-        key = (id(group.mesh), tuple(xf.data()), _cache_ver(self))
+        key = (id(group.mesh), tuple(xf.data()), _content_ver(self))
         hit = cache.get(id(group))
         if hit is not None and hit[0] == key:
             return hit[1]
@@ -7779,19 +7780,61 @@ class Viewport(QOpenGLWidget):
         cache[id(group)] = (key, placed)
         return placed
 
+    def _billboard_extent(self, group):
+        """(anchor, width, height, texture path) of a billboard as placed,
+        before any turn or drag preview — or ``None`` for an empty one.
+        Remembered per model content: a vector-art figure from an imported
+        file carries thousands of vertices, and the walk over them ran for
+        every figure on every click (38 figures, ~250 ms per click on the
+        villa of issue #1006)."""
+        xf = getattr(group, "xform", None)
+        key = (id(group.mesh), tuple(xf.data()) if xf is not None else None,
+               _content_ver(self))
+        cache = getattr(self, "_billboard_extents", None)
+        if cache is None:
+            cache = self._billboard_extents = {}
+        hit = cache.get(id(group))
+        if hit is not None and hit[0] == key:
+            return hit[1]
+        verts = self._billboard_mesh(group).vertices
+        if not verts:
+            ext = None
+        else:
+            xs = [v.position.x() for v in verts]
+            ys = [v.position.y() for v in verts]
+            zs = [v.position.z() for v in verts]
+            anchor = QVector3D((min(xs) + max(xs)) / 2,
+                               (min(ys) + max(ys)) / 2, min(zs))
+            # Planar width: hypot handles a sprite plane at any yaw (an
+            # imported face-me sits wherever its baked transform left it);
+            # an axis-aligned quad gives the same value as before.
+            w = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
+            h = max(zs) - min(zs)
+            tex = None
+            for f in group.mesh.faces:
+                t = f.attrs.get("texture")
+                if t and t.get("path"):
+                    tex = t["path"]
+                    break
+            # tex may stay None for a vector-art face-me (solid-colour
+            # faces, e.g. a 2D person from an imported file): picking,
+            # outline and snap still need the quad; the legacy textured-quad
+            # render skips texture-less groups.
+            ext = (anchor, w, h, tex)
+        if len(cache) > 4096:
+            cache.clear()
+        cache[id(group)] = (key, ext)
+        return ext
+
     def _billboard_quad(self, group, face_dir=None):
         """The face-me quad of a billboard group, rotated around its vertical
         anchor axis to face the camera NOW (or ``face_dir`` when given).
         Returns (corners[4], tex_path) or ``None``. Shared by the render
         pass, picking and the shadow casters."""
-        verts = self._billboard_mesh(group).vertices
-        if not verts:
+        ext = self._billboard_extent(group)
+        if ext is None:
             return None
-        xs = [v.position.x() for v in verts]
-        ys = [v.position.y() for v in verts]
-        zs = [v.position.z() for v in verts]
-        anchor = QVector3D((min(xs) + max(xs)) / 2,
-                           (min(ys) + max(ys)) / 2, min(zs))
+        anchor, w, h, tex = ext
         # A billboard being Move/Rotate-dragged previews through THIS pass
         # (its raw mesh quad in the scratch VBOs showed the texture swimming
         # and ignored the face-me turn): carry the preview transform on the
@@ -7804,20 +7847,6 @@ class Viewport(QOpenGLWidget):
                 off = getattr(self, "_preview_offset", None)
                 if off is not None:
                     anchor = anchor + off
-        # Planar width: hypot handles a sprite plane at any yaw (an imported
-        # face-me sits wherever its baked transform left it); an axis-aligned
-        # quad gives the same value as before.
-        w = math.hypot(max(xs) - min(xs), max(ys) - min(ys))
-        h = max(zs) - min(zs)
-        tex = None
-        for f in group.mesh.faces:
-            t = f.attrs.get("texture")
-            if t and t.get("path"):
-                tex = t["path"]
-                break
-        # tex may stay None for a vector-art face-me (solid-colour faces,
-        # e.g. a 2D person from a .skp file): picking/outline/snap still need the
-        # quad; the legacy textured-quad render skips texture-less groups.
         if w < 1e-9 or h < 1e-9:
             return None
         # Facing: the camera by default; the shadow pass passes the SUN so a
@@ -7927,12 +7956,15 @@ class Viewport(QOpenGLWidget):
     def _faceme_base(self, g):
         """Cached base data of a mesh face-me billboard: interleaved pos+uv
         arrays per image, the vertical anchor axis and the horizontal base
-        normal. Rebuilt when the scene changes (sprites are tiny)."""
+        normal. Rebuilt when the MODEL changes, not on a click: a vector-art
+        figure from an imported file is faces with thousands of holes, and
+        triangulating the villa's 18 again after every selection was the
+        ~5 s per click of issue #1006."""
         cache = getattr(self, "_faceme_cache", None)
         if cache is None:
             cache = self._faceme_cache = {}
         xf = getattr(g, "xform", None)
-        key = (self.scene.version, id(self.scene.mesh),
+        key = (_content_ver(self), id(self.scene.mesh),
                None if xf is None else tuple(xf.data()))
         cur = cache.get(id(g))
         if cur is not None and cur[0] == key:
