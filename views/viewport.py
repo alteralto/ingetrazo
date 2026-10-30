@@ -10117,25 +10117,89 @@ class Viewport(QOpenGLWidget):
                              int(style.get("decimals", 2)),
                              bool(style.get("show_unit", True)))
 
+    #: Screen pixels between the occlusion samples of a long annotation
+    #: line (``_draw_occluded_segment``), and the most samples it takes.
+    _OCCLUSION_STEP_PX = 12.0
+    _OCCLUSION_MAX_SAMPLES = 128
+    #: Where a line goes behind something, its sample step is cut in this
+    #: many parts this many times: 1/64 of a step, under a pixel.
+    _OCCLUSION_SPLIT = 8
+    _OCCLUSION_ROUNDS = 2
+
     def _draw_occluded_segment(self, painter: QPainter, p3a: QVector3D,
                                p3b: QVector3D, samples: int = 16) -> None:
         """Draw the 3D segment ``p3a``–``p3b`` in screen space, skipping the
-        parts hidden behind solid geometry (CPU occlusion sample). A sub-segment
-        is drawn only when both its sampled ends are visible, so the line never
-        bleeds over the solid; the silhouette gap is sub-pixel at this density.
+        parts hidden behind solid geometry (CPU occlusion sample).
+
+        The line is sampled about every ``_OCCLUSION_STEP_PX`` on screen (at
+        least ``samples`` steps), and where one sample is seen and the next
+        is not, the point where it goes behind is pinned by halving the
+        step — the line stops AT the silhouette. Drawing only the steps
+        whose both ends were seen cut it back a whole sixteenth at a time,
+        and the cut jumped from step to step as the view turned: the
+        dimensions clipped in and out behind other surfaces (issue #918).
 
         The samples are projected and tested as one batch
         (``_project_samples``): doing it point by point rebuilt the camera's
         projection*view matrix for every sample — 432 rebuilds a frame for
         eight dimensions — and ran a NumPy 3x3 reduction per sample (#439)."""
-        pts = [p3a + (p3b - p3a) * (i / samples) for i in range(samples + 1)]
-        prev_px = None
-        prev_vis = False
-        for px, vis in self._project_samples(pts):
-            vis = px is not None and vis
-            if prev_px is not None and px is not None and prev_vis and vis:
-                painter.drawLine(QPointF(*prev_px), QPointF(*px))
-            prev_px, prev_vis = px, vis
+        d = p3b - p3a
+
+        def at(ts):
+            return [p3a + d * t for t in ts]
+
+        mvp = self.camera.projection_matrix() * self.camera.view_matrix()
+        ea = self._world_to_pixel(p3a, mvp)
+        eb = self._world_to_pixel(p3b, mvp)
+        n = samples
+        if ea is not None and eb is not None:
+            span = math.hypot(eb[0] - ea[0], eb[1] - ea[1])
+            n = max(samples, min(self._OCCLUSION_MAX_SAMPLES,
+                                 int(span / self._OCCLUSION_STEP_PX)))
+        ts = [i / n for i in range(n + 1)]
+        res = self._project_samples(at(ts))
+        pxs = [px for px, _v in res]
+        vis = [px is not None and v for px, v in res]
+        # The steps that change from seen to hidden (or back): each is cut
+        # in ``_OCCLUSION_SPLIT`` and narrowed to the part where it flips,
+        # every cut step in one batch per round.
+        cuts = [i for i in range(n)
+                if pxs[i] is not None and pxs[i + 1] is not None
+                and vis[i] != vis[i + 1]]
+        edge: dict = {}
+        if cuts:
+            k = self._OCCLUSION_SPLIT
+            lo = {i: ts[i] for i in cuts}          # t on sample i's side
+            hi = {i: ts[i + 1] for i in cuts}
+            edge = {i: pxs[i] if vis[i] else pxs[i + 1] for i in cuts}
+            for _ in range(self._OCCLUSION_ROUNDS):
+                probe = [(i, lo[i] + (hi[i] - lo[i]) * j / k)
+                         for i in cuts for j in range(1, k)]
+                got = self._project_samples(at([t for _i, t in probe]))
+                for c, i in enumerate(cuts):
+                    row = got[c * (k - 1):(c + 1) * (k - 1)]
+                    tt = [t for _i, t in probe[c * (k - 1):(c + 1) * (k - 1)]]
+                    new_lo, new_hi = lo[i], hi[i]
+                    for (px, v), t in zip(row, tt):
+                        if (px is not None and v) == vis[i]:
+                            new_lo = t
+                            if vis[i]:
+                                edge[i] = px      # the last seen, so far
+                        else:
+                            new_hi = t
+                            if not vis[i]:
+                                edge[i] = px      # the first seen, so far
+                            break
+                    lo[i], hi[i] = new_lo, new_hi
+        for i in range(n):
+            a, b = pxs[i], pxs[i + 1]
+            if a is None or b is None:
+                continue
+            if vis[i] and vis[i + 1]:
+                painter.drawLine(QPointF(*a), QPointF(*b))
+            elif edge.get(i) is not None:
+                start = a if vis[i] else b
+                painter.drawLine(QPointF(*start), QPointF(*edge[i]))
 
     def _project_samples(self, pts: list[QVector3D]):
         """Project ``pts`` to screen pixels and test each one against the
