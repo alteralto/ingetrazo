@@ -1063,3 +1063,21 @@ def test_openai_asks_for_max_completion_tokens():
     _u, _h, payload = ai.build_request("anthropic", "claude-sonnet-5", "k",
                                        "SYS", msgs, max_tokens=8192)
     assert json.loads(payload)["max_tokens"] == 8192
+
+
+def test_test_connection_to_openai_sends_max_completion_tokens(monkeypatch):
+    """#1032 reported the 400 «Use 'max_completion_tokens' instead» from
+    Test connection: that button goes through probar_conexion → chat, the
+    same request builder, so it must carry the new name too."""
+    sent = []
+
+    def fake_urlopen(url, headers, payload, timeout, **_kw):
+        sent.append((url, json.loads(payload)))
+        return json.dumps({"choices": [{"message": {"content": "OK"}}]}).encode()
+
+    monkeypatch.setattr(ai, "_urlopen", fake_urlopen)
+    ok, msg = ai.probar_conexion("openai", "gpt-6-sol", "sk-proj-k")
+    assert ok and msg == "OK"
+    url, body = sent[0]
+    assert url == "https://api.openai.com/v1/chat/completions"
+    assert "max_completion_tokens" in body and "max_tokens" not in body
