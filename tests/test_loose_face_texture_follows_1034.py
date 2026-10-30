@@ -172,3 +172,20 @@ def test_rotate_tool_carries_the_texture(monkeypatch):
     assert _flat(_uv_list(low, turned)) == pytest.approx(_flat(before),
                                                       abs=1e-6)
 
+
+def test_warped_face_keeps_the_projection_it_was_drawn_with():
+    """The planar map is materialised with the renderer's own normal
+    (Newell's). The first corner's cross product read this slightly warped
+    quad as standing on its side and the image jumped to that projection."""
+    scene = Scene()
+    hist = History(scene)
+    f = scene.mesh.add_face([V(0, 0, 0), V(1, 0, 0), V(1, 0, 0.0005),
+                             V(0, 1, 0.0002)])
+    f.attrs = {"texture": dict(TEX)}
+    pts = [V(p) for p in f.vertices]
+    before = _uv_list(f, pts)
+    delta = V(0.4, 0.2, 0.0)
+    hist.execute(MoveVerticesCommand(pts, delta, carry_textures=True))
+    assert f in scene.mesh.faces
+    assert _flat(_uv_list(f, [p + delta for p in pts])) == pytest.approx(
+        _flat(before), abs=1e-6)

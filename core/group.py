@@ -338,14 +338,21 @@ def _implicit_uvw(face, tex, minv):
     pts = [minv.map(p) for p in face.vertices]
     if len(pts) < 3:
         return None
-    normal = QVector3D()
-    for i in range(1, len(pts) - 1):
-        normal = QVector3D.crossProduct(pts[i] - pts[0], pts[i + 1] - pts[0])
-        if normal.length() > 1e-12:
-            break
-    if normal.length() <= 1e-12:
+    # Newell's normal, as ``Face.normal`` — the one the renderer projects
+    # with. The first corner's cross product picked another plane on a
+    # sliver or a slightly warped face (a tree's bark strip), and the image
+    # jumped to that projection as the face moved (#1034).
+    nx = ny = nz = 0.0
+    for i, a in enumerate(pts):
+        b = pts[(i + 1) % len(pts)]
+        nx += (a.y() - b.y()) * (a.z() + b.z())
+        ny += (a.z() - b.z()) * (a.x() + b.x())
+        nz += (a.x() - b.x()) * (a.y() + b.y())
+    normal = QVector3D(nx, ny, nz)
+    length = normal.length()
+    if length < 1e-9:
         return None
-    gu, cu, gv, cv = face_uv_axes(tex, normal.normalized())
+    gu, cu, gv, cv = face_uv_axes(tex, normal / length)
     return [gu.x(), gu.y(), gu.z(), float(cu),
             gv.x(), gv.y(), gv.z(), float(cv)]
 
