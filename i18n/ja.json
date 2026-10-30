@@ -3220,7 +3220,7 @@
   "Replace the existing profile '{name}'?": "既存のプロファイル「{name}」を置き換えますか?",
   "Load profile…": "プロファイルを読み込む…",
   "FreeCAD-style": "FreeCAD 風",
-  "Invert": "反転",
+  "Invert": "反転する",
   "Invalid SpaceMouse profile": "無効な SpaceMouse プロファイル",
   "Profile name:": "プロファイル名:",
   "Pan X": "パン X",

@@ -3220,7 +3220,7 @@
  "Replace the existing profile '{name}'?": "기존 프로필 «{name}»을(를) 바꿀까요?",
  "Load profile…": "프로필 불러오기…",
  "FreeCAD-style": "FreeCAD 방식",
- "Invert": "반전",
+ "Invert": "반전하기",
  "Invalid SpaceMouse profile": "잘못된 SpaceMouse 프로필",
  "Profile name:": "프로필 이름:",
  "Pan X": "이동 X",

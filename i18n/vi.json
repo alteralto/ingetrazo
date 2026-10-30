@@ -3247,7 +3247,7 @@
   "Replace the existing profile '{name}'?": "Thay thế hồ sơ hiện có «{name}»?",
   "Load profile…": "Tải hồ sơ…",
   "FreeCAD-style": "Kiểu FreeCAD",
-  "Invert": "Đảo ngược",
+  "Invert": "Đảo chiều",
   "Invalid SpaceMouse profile": "Hồ sơ SpaceMouse không hợp lệ",
   "Profile name:": "Tên hồ sơ:",
   "Pan X": "Kéo X",
