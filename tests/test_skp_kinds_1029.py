@@ -113,3 +113,26 @@ def test_the_definition_kind_is_noted_during_the_parse():
         assert openskp_compat.kinds_known(False)
     finally:
         openskp_compat.reset_group_definitions()
+
+
+def test_lines_on_a_hidden_tag_stay_out():
+    """The loose lines #922 brings in follow the file's tags: the plaza's
+    survey contours sit on two hidden tags and covered the whole model; a
+    line inside a group does not hide with its tag here, so the ones the
+    file hides are left out (lines on a visible tag still come)."""
+    def v(i, x):
+        return NS(id=i, x=x, y=0, z=0)
+    lines = NS(id=5, name="top.dwg", faces={}, instances=[],
+               vertices={1: v(1, 0), 2: v(2, 10), 3: v(3, 20), 4: v(4, 30),
+                         5: v(5, 40), 6: v(6, 50)},
+               edges={10: NS(id=10, v1_id=1, v2_id=2, layer="CVL_CURV"),
+                      11: NS(id=11, v1_id=3, v2_id=4, layer="limite"),
+                      12: NS(id=12, v1_id=5, v2_id=6, layer=None)})
+    root = _empty(0, "ROOT_MODEL", [NS(ref_idx=5, matrix=_ID)])
+    model = NS(definitions={0: root, 5: lines},
+               layers=[NS(name="CVL_CURV", hidden=True),
+                       NS(name="limite", hidden=False)])
+    payload = skp_openskp._adapt(model, "plaza")
+    got = [seg for part in payload["groups"] + payload["protos"]
+           for seg in part.get("loose_edges") or []]
+    assert sorted(round(a[0] / 0.0254) for a, _b in got) == [20, 40]

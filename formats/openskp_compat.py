@@ -193,6 +193,14 @@ def _keep_layer_table() -> bool:
 _DEFAULT_TAGS = ("Layer0", "Layer 0", "Untagged")
 
 
+def hidden_tags(names) -> frozenset:
+    """The hidden tags ``names`` as the geometry may carry them: by name, and
+    by the ids the last parse's table gives those names."""
+    names = set(names)
+    table = getattr(_parse_tables, "layers", None) or {}
+    return frozenset(names | {i for i, n in table.items() if n in names})
+
+
 def resolve_face_layers(model) -> int:
     """Turn the face layers that are tag ids into tag names, from the table
     of the parse that built ``model``. A face on the default tag, or on an
