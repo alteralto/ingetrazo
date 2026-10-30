@@ -16107,10 +16107,12 @@ class Viewport(QOpenGLWidget):
                 # A loose face clearly in FRONT hides the group: what the
                 # cursor shows is that face, and every caller asks for the
                 # group it can see (#276, #363, #378 — a loose box before
-                # a component could not be clicked). Coplanar faces keep
-                # the old answer.
+                # a component could not be clicked). A coplanar one too:
+                # a face drawn ON a group's face is the deliberate target,
+                # and with the group winning it could only be reached by
+                # hiding the group (#982).
                 eps = self._coplanar_eps(origin, direction, best[0])
-                if np.isfinite(loose_t) and loose_t < best[0] - eps:
+                if np.isfinite(loose_t) and loose_t <= best[0] + eps:
                     return None
                 return best[1]
         # Edge fallback (cursor over empty space, or a lines-only group):
