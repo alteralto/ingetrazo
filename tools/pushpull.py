@@ -1767,8 +1767,11 @@ class PushPullTool(Tool):
             a, b = QVector3D(edge.a), QVector3D(edge.b)
             if (a - b).lengthSquared() < 1e-18:
                 continue
-            if _key(a) in exclude and _key(b) in exclude:
-                continue  # the moving cap's own edges are not references
+            if _key(a) in exclude or _key(b) in exclude:
+                # The moving cap's own edges, and the side edges of the
+                # solid being pushed (one end on the cap), are no reference
+                # — the same as its side faces since #839.
+                continue
             point = (a + b) * 0.5
             pixel = vp._world_to_pixel(point)
             if pixel is None:
