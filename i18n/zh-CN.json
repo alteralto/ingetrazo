@@ -3190,5 +3190,9 @@
  "Texts": "文字",
  "Tool cursor:": "工具光标：",
  "The tool's icon": "工具图标",
- "Crosshair": "十字线"
+ "Crosshair": "十字线",
+ "DWG import cancelled.": "已取消 DWG 导入。",
+ "The DWG conversion took too long and was stopped.": "DWG 转换耗时过长，已停止。",
+ "The DWG converter could not convert this drawing.": "DWG 转换器无法转换此图纸。",
+ "Details: {details}": "详细信息：{details}"
 }

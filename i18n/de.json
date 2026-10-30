@@ -3189,5 +3189,9 @@
  "Texts": "Texte",
  "Tool cursor:": "Werkzeugcursor:",
  "The tool's icon": "Symbol des Werkzeugs",
- "Crosshair": "Fadenkreuz"
+ "Crosshair": "Fadenkreuz",
+ "DWG import cancelled.": "DWG-Import abgebrochen.",
+ "The DWG conversion took too long and was stopped.": "Die DWG-Konvertierung hat zu lange gedauert und wurde abgebrochen.",
+ "The DWG converter could not convert this drawing.": "Der DWG-Konverter konnte diese Zeichnung nicht konvertieren.",
+ "Details: {details}": "Details: {details}"
 }

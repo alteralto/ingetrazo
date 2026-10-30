@@ -3189,5 +3189,9 @@
  "Texts": "Textes",
  "Tool cursor:": "Curseur d'outil :",
  "The tool's icon": "L'icône de l'outil",
- "Crosshair": "Réticule"
+ "Crosshair": "Réticule",
+ "DWG import cancelled.": "Import du DWG annulé.",
+ "The DWG conversion took too long and was stopped.": "La conversion du DWG a pris trop de temps et a été arrêtée.",
+ "The DWG converter could not convert this drawing.": "Le convertisseur DWG n’a pas pu convertir ce dessin.",
+ "Details: {details}": "Détails : {details}"
 }

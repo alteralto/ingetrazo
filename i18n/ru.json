@@ -3189,5 +3189,9 @@
  "Texts": "Тексты",
  "Tool cursor:": "Курсор инструмента:",
  "The tool's icon": "Значок инструмента",
- "Crosshair": "Перекрестие"
+ "Crosshair": "Перекрестие",
+ "DWG import cancelled.": "Импорт DWG отменён.",
+ "The DWG conversion took too long and was stopped.": "Конвертация DWG заняла слишком много времени и была остановлена.",
+ "The DWG converter could not convert this drawing.": "Конвертер DWG не смог преобразовать этот чертёж.",
+ "Details: {details}": "Подробности: {details}"
 }

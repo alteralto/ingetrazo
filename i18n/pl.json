@@ -3197,5 +3197,9 @@
  "Texts": "Teksty",
  "Tool cursor:": "Kursor narzędzia:",
  "The tool's icon": "Ikona narzędzia",
- "Crosshair": "Krzyżyk"
+ "Crosshair": "Krzyżyk",
+ "DWG import cancelled.": "Import DWG anulowany.",
+ "The DWG conversion took too long and was stopped.": "Konwersja DWG trwała zbyt długo i została przerwana.",
+ "The DWG converter could not convert this drawing.": "Konwerter DWG nie mógł przekonwertować tego rysunku.",
+ "Details: {details}": "Szczegóły: {details}"
 }

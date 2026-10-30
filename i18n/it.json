@@ -3190,5 +3190,9 @@
  "Texts": "Testi",
  "Tool cursor:": "Cursore dello strumento:",
  "The tool's icon": "L'icona dello strumento",
- "Crosshair": "Mirino"
+ "Crosshair": "Mirino",
+ "DWG import cancelled.": "Importazione del DWG annullata.",
+ "The DWG conversion took too long and was stopped.": "La conversione del DWG ha impiegato troppo tempo ed è stata interrotta.",
+ "The DWG converter could not convert this drawing.": "Il convertitore DWG non è riuscito a convertire questo disegno.",
+ "Details: {details}": "Dettagli: {details}"
 }

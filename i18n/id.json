@@ -3192,5 +3192,9 @@
  "Texts": "Teks",
  "Tool cursor:": "Kursor alat:",
  "The tool's icon": "Ikon alat",
- "Crosshair": "Tanda silang"
+ "Crosshair": "Tanda silang",
+ "DWG import cancelled.": "Impor DWG dibatalkan.",
+ "The DWG conversion took too long and was stopped.": "Konversi DWG memakan waktu terlalu lama dan dihentikan.",
+ "The DWG converter could not convert this drawing.": "Konverter DWG tidak dapat mengonversi gambar ini.",
+ "Details: {details}": "Detail: {details}"
 }
