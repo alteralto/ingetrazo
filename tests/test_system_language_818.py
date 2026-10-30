@@ -128,3 +128,29 @@ def test_pinning_another_language_over_the_system_one_asks_a_restart(prefs):
     assert QSettings(str(path), QSettings.IniFormat).value("language") == "de"
     assert len(notes) == 1
     assert i18n.current_language() == "de"
+
+
+@pytest.mark.parametrize("saved", [None, i18n.SYSTEM, "de"])
+def test_startup_resolves_the_saved_choice(saved, tmp_path, monkeypatch,
+                                           system_is_french):
+    """main._init_language runs the same resolution as the menus: an
+    unset choice or "system" starts in the OS language, never crashes
+    nor activates a catalog literally named "system"."""
+    import main
+    path = tmp_path / "start.ini"
+    st = QSettings(str(path), QSettings.IniFormat)
+    if saved is not None:
+        st.setValue("language", saved)
+    st.sync()
+    monkeypatch.setattr(main, "QSettings",
+                        lambda: QSettings(str(path), QSettings.IniFormat))
+    installed = []
+    monkeypatch.setattr(main, "_install_qt_translator", installed.append)
+    before = i18n.current_language()
+    try:
+        main._init_language()
+        expected = "de" if saved == "de" else "fr"
+        assert i18n.current_language() == expected
+        assert installed == [expected]
+    finally:
+        i18n.set_language(before)
