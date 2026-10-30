@@ -39,15 +39,27 @@ definition's tail as items. The tail's signature now ends a definition list
 whatever was counted (upstream checked it only after a "burn").
 
 **Groups arrive as components.** The classic reader reads a ``CGroup``
-and a ``CComponentInstance`` alike and keeps no trace of which it was. The
-definitions placed through a ``CGroup`` are noted during the parse
-(:func:`group_definitions`) so the import makes them groups again.
+and a ``CComponentInstance`` alike and keeps no trace of which it was, and
+the 2021+ reader drops the definition's kind. The definitions placed
+through a ``CGroup``, or marked as groups by their kind, are noted during
+the parse (:func:`group_definitions`) so the import makes them groups
+again.
+
+**A 2019 layer record two bytes longer.** From the 2019 version on, a
+layer record ends 23 bytes after its last string, not 21 (the new field is
+most likely the layer's dash pattern). The reader skips 21, so in the first
+definition the next count read two bytes early, came out at 33 million
+and the file did not open («implausible def entity count», #157). The
+2020 files still opened only because the reader already steps over zero
+words between layers and around their counts there; only 2019 files take
+the two extra bytes here.
 
 All patches are detected by BEHAVIOUR, not by version: once the upstream
 reader carries ``_connection_paths`` the first is left alone, the second
-only touches a face layer that is still a number, and the last two step
-aside once the text reader no longer scans for the delimiter and the list
-reader no longer ties the tail check to burns.
+only touches a face layer that is still a number, the anchor and list
+fixes step aside once the text reader no longer scans for the delimiter
+and the list reader no longer ties the tail check to burns, and the layer
+fix once the layer reader looks at the version itself.
 """
 from __future__ import annotations
 
@@ -74,8 +86,9 @@ def apply() -> bool:
     lists = _fix_definition_list_end(L)
     groups = _note_legacy_groups(L)
     kinds = _note_definition_kinds()
+    tails = _fix_layer_tail_2019(L)
     return _fix_legacy_dimensions(L) or layers or texts or lists \
-        or groups or kinds
+        or groups or kinds or tails
 
 
 def _note_legacy_groups(L) -> bool:
@@ -380,4 +393,24 @@ def _fix_definition_list_end(L) -> bool:
 
     _read_entity_list_inner._ends_at_tail = True
     L._read_entity_list_inner = _read_entity_list_inner
+    return True
+
+
+def _fix_layer_tail_2019(L) -> bool:
+    # A reader that already tells the versions apart in its layer record
+    # has the fix: leave it alone.
+    original = getattr(L, "_read_layer", None)
+    if (original is None or getattr(original, "_long_tail", False)
+            or "ver" in original.__code__.co_names):
+        return False
+
+    def _read_layer(ar, r):
+        rec = original(ar, r)
+        if getattr(ar, "ver", None) == 19 and r.peek(2) == b"\x00\x00":
+            r.raw(2)
+        return rec
+
+    _read_layer._long_tail = True
+    L._read_layer = _read_layer
+    L._READERS['CLayer'] = _read_layer
     return True
