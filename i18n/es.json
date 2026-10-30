@@ -611,7 +611,6 @@
  "Hairy gray floor carpeting": "Moqueta peluda gris",
  "Half round geometry": "Papel pintado geometría semicirculos",
  "Header band": "Banda de cabecera",
- "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Ojo: {model} no tiene visión, así que la foto NO se enviará — queda guardada, y vuelve a viajar cuando cambies a un modelo con visión (Anthropic, OpenAI, Gemini, OpenRouter).",
  "Heal Overlapping Faces": "Reparar caras solapadas",
  "Healed {n} overlapping face(s).": "Se repararon {n} cara(s) solapada(s).",
  "Height": "Alto",
@@ -2270,7 +2269,6 @@
  "In sync — stop moving to update": "Sincronizado — detente para actualizar",
  "Blender stopped; it will start again": "Blender se detuvo; volverá a arrancar",
  "In sync": "Sincronizado",
- "Enter sends · Shift+Enter: new line": "Enter envía · Mayús+Enter: nueva línea",
  "Search commands…": "Buscar comandos…",
  "Search a command…": "Buscar un comando…",
  "No results found": "No se encontraron resultados",
@@ -3193,5 +3191,11 @@
  "DWG import cancelled.": "Importación de DWG cancelada.",
  "The DWG conversion took too long and was stopped.": "La conversión del DWG tardó demasiado y se detuvo.",
  "The DWG converter could not convert this drawing.": "El conversor de DWG no pudo convertir este dibujo.",
- "Details: {details}": "Detalles: {details}"
+ "Details: {details}": "Detalles: {details}",
+ "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter envía · Mayús+Enter: nueva línea · arrastra una imagen o pégala",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "Ojo: {model} no tiene visión, así que la foto NO se enviará — queda guardada, y vuelve a viajar cuando cambies a un modelo con visión (Anthropic, OpenAI, Gemini, OpenRouter, o un modelo con visión de OpenCode Go como glm-5.3-flash o kimi-k3).",
+ "Model — «Models» in the connection box lists what your key can use": "Modelo — «Modelos» en la caja de conexión lista los que tu clave puede usar",
+ "Stop": "Detener",
+ "Stopped — the answer in flight is discarded.": "Detenido — la respuesta en vuelo se descarta.",
+ "pasted image": "imagen pegada"
 }

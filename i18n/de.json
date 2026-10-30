@@ -611,7 +611,6 @@
  "Hairy gray floor carpeting": "Haariger grauer Teppichboden",
  "Half round geometry": "Halbrunde Geometrie",
  "Header band": "Kopfband",
- "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter).": "Hinweis: {model} kann keine Bilder sehen, daher wird das Foto NICHT gesendet — es wird aufbewahrt und wieder mitgeschickt, wenn du zu einem Modell mit Bilderkennung wechselst (Anthropic, OpenAI, Gemini, OpenRouter).",
  "Heal Overlapping Faces": "Überlappende Flächen reparieren",
  "Healed {n} overlapping face(s).": "{n} überlappende Fläche(n) repariert.",
  "Height": "Höhe",
@@ -2266,7 +2265,6 @@
  "In sync — stop moving to update": "Synchron — zum Aktualisieren stillhalten",
  "Blender stopped; it will start again": "Blender wurde beendet; es startet erneut",
  "In sync": "Synchron",
- "Enter sends · Shift+Enter: new line": "Enter sendet · Umschalt+Enter: neue Zeile",
  "Search commands…": "Befehle suchen…",
  "Search a command…": "Befehl suchen…",
  "No results found": "Keine Ergebnisse gefunden",
@@ -3193,5 +3191,11 @@
  "DWG import cancelled.": "DWG-Import abgebrochen.",
  "The DWG conversion took too long and was stopped.": "Die DWG-Konvertierung hat zu lange gedauert und wurde abgebrochen.",
  "The DWG converter could not convert this drawing.": "Der DWG-Konverter konnte diese Zeichnung nicht konvertieren.",
- "Details: {details}": "Details: {details}"
+ "Details: {details}": "Details: {details}",
+ "Enter sends · Shift+Enter: new line · drag an image in or paste it": "Enter sendet · Umschalt+Enter: neue Zeile · ein Bild hineinziehen oder einfügen",
+ "Heads-up: {model} has no vision, so the photo will NOT be sent — it is kept, and flows again when you switch to a vision model (Anthropic, OpenAI, Gemini, OpenRouter, or a vision OpenCode Go model like glm-5.3-flash or kimi-k3).": "Hinweis: {model} kann keine Bilder sehen, daher wird das Foto NICHT gesendet — es wird aufbewahrt und wieder mitgeschickt, wenn du zu einem Modell mit Bilderkennung wechselst (Anthropic, OpenAI, Gemini, OpenRouter oder ein OpenCode-Go-Modell mit Bilderkennung wie glm-5.3-flash oder kimi-k3).",
+ "Model — «Models» in the connection box lists what your key can use": "Modell — „Modelle“ im Verbindungsbereich listet die für deinen Schlüssel verfügbaren",
+ "Stop": "Stopp",
+ "Stopped — the answer in flight is discarded.": "Gestoppt — die unterwegs befindliche Antwort wird verworfen.",
+ "pasted image": "eingefügtes Bild"
 }
