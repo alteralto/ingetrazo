@@ -3272,5 +3272,6 @@
  "Show the rows the filter leaves out.": "Pokaż wiersze pominięte przez filtr.",
  "Filter rows": "Filtruj wiersze",
  "Order by name": "Sortuj według nazwy",
- "Double-click to select its objects in the model": "Kliknij dwukrotnie, aby zaznaczyć jej obiekty w modelu"
+ "Double-click to select its objects in the model": "Kliknij dwukrotnie, aby zaznaczyć jej obiekty w modelu",
+ "Group — click to select it": "Grupa — kliknij, aby ją zaznaczyć"
 }

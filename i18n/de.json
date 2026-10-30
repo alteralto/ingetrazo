@@ -3264,5 +3264,6 @@
  "Show the rows the filter leaves out.": "Die Zeilen zeigen, die der Filter ausblendet.",
  "Filter rows": "Zeilen filtern",
  "Order by name": "Nach Name ordnen",
- "Double-click to select its objects in the model": "Doppelklick wählt ihre Objekte im Modell aus"
+ "Double-click to select its objects in the model": "Doppelklick wählt ihre Objekte im Modell aus",
+ "Group — click to select it": "Gruppe — klicken, um sie auszuwählen"
 }

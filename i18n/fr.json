@@ -3264,5 +3264,6 @@
  "Show the rows the filter leaves out.": "Afficher les lignes que le filtre laisse de côté.",
  "Filter rows": "Filtrer les lignes",
  "Order by name": "Trier par nom",
- "Double-click to select its objects in the model": "Double-cliquez pour sélectionner ses objets dans le modèle"
+ "Double-click to select its objects in the model": "Double-cliquez pour sélectionner ses objets dans le modèle",
+ "Group — click to select it": "Groupe — cliquez pour le sélectionner"
 }

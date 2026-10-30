@@ -3264,5 +3264,6 @@
  "Show the rows the filter leaves out.": "Показать строки, которые фильтр исключает.",
  "Filter rows": "Фильтровать строки",
  "Order by name": "Сортировать по имени",
- "Double-click to select its objects in the model": "Дважды щёлкните, чтобы выделить её объекты в модели"
+ "Double-click to select its objects in the model": "Дважды щёлкните, чтобы выделить её объекты в модели",
+ "Group — click to select it": "Группа — щёлкните, чтобы выбрать её"
 }

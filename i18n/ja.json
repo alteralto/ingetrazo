@@ -3264,5 +3264,6 @@
  "Show the rows the filter leaves out.": "フィルターで除外された行を表示します。",
  "Filter rows": "行を絞り込む",
  "Order by name": "名前順",
- "Double-click to select its objects in the model": "ダブルクリックでモデル内のそのオブジェクトを選択"
+ "Double-click to select its objects in the model": "ダブルクリックでモデル内のそのオブジェクトを選択",
+ "Group — click to select it": "グループ — クリックで選択"
 }

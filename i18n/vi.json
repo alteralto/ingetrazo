@@ -3291,5 +3291,6 @@
  "Show the rows the filter leaves out.": "Hiện các hàng mà bộ lọc bỏ ra.",
  "Filter rows": "Lọc hàng",
  "Order by name": "Sắp theo tên",
- "Double-click to select its objects in the model": "Nhấp đúp để chọn các đối tượng của nó trong mô hình"
+ "Double-click to select its objects in the model": "Nhấp đúp để chọn các đối tượng của nó trong mô hình",
+ "Group — click to select it": "Nhóm — bấm để chọn"
 }

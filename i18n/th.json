@@ -3267,5 +3267,6 @@
  "Show the rows the filter leaves out.": "แสดงแถวที่ตัวกรองไม่ได้รวมไว้",
  "Filter rows": "กรองแถว",
  "Order by name": "เรียงตามชื่อ",
- "Double-click to select its objects in the model": "ดับเบิลคลิกเพื่อเลือกวัตถุของมันในโมเดล"
+ "Double-click to select its objects in the model": "ดับเบิลคลิกเพื่อเลือกวัตถุของมันในโมเดล",
+ "Group — click to select it": "กลุ่ม — คลิกเพื่อเลือก"
 }

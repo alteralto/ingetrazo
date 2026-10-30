@@ -3267,5 +3267,6 @@
  "Show the rows the filter leaves out.": "ສະແດງແຖວທີ່ຕົວກັ່ນຕອງປະໄວ້.",
  "Filter rows": "ກັ່ນຕອງແຖວ",
  "Order by name": "ຮຽງຕາມຊື່",
- "Double-click to select its objects in the model": "ຄລິກສອງເທື່ອເພື່ອເລືອກວັດຖຸຂອງມັນໃນແບບຈຳລອງ"
+ "Double-click to select its objects in the model": "ຄລິກສອງເທື່ອເພື່ອເລືອກວັດຖຸຂອງມັນໃນແບບຈຳລອງ",
+ "Group — click to select it": "ກຸ່ມ — ຄລິກເພື່ອເລືອກ"
 }
