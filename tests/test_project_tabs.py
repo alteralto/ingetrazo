@@ -388,6 +388,36 @@ def test_closing_the_first_tab_lets_it_go_too(win, tmp_path):
     assert scene() is None
 
 
+def test_closing_a_tab_hands_its_memory_back(win, tmp_path, monkeypatch):
+    """The system monitor saw closing the SPR's tab drop only ~1 GB of
+    ~5.8 GB: its scene was freed only by the cycle collector, whenever
+    that ran, and glibc kept the freed heap anyway. Once the viewport is
+    gone the window collects and trims by itself — and takes no hover
+    picture of the closing tab (a whole frame drawn again: seconds and
+    ~650 MB of draw caches on the SPR)."""
+    from core import malloc_arenas
+    trims = []
+    monkeypatch.setattr(malloc_arenas, "trim", lambda: trims.append(1))
+    pictured = []
+    monkeypatch.setattr(win, "_tab_thumbnail",
+                        lambda vp: pictured.append(vp))
+    win.open_path(_igz(tmp_path, "a.igz"))
+    win.open_path(_igz(tmp_path, "b.igz"))
+    closing = win.viewport
+    scene = weakref.ref(closing.scene)
+    pictured.clear()                    # a's, taken as b's tab opened
+    gc.disable()                        # only the window may collect
+    try:
+        win.close_document(ask=False)
+        del closing
+        assert not pictured, "a picture was taken of the closing tab"
+        _settle(win.RECLAIM_DELAY_MS + 300)
+        assert scene() is None, "the closed project is still in memory"
+        assert trims, "the freed heap was not handed back"
+    finally:
+        gc.enable()
+
+
 # ---- auto-save and recovery ---------------------------------------------
 def test_each_untitled_project_autosaves_to_its_own_slot(win):
     from core import autosave
