@@ -51,6 +51,16 @@ class Document:
         self.last_sheet: int = 0
         #: Its viewport's last frame, small, shown on hover over its tab.
         self.thumbnail = None
+        #: What an extension put in this project's place in the viewport
+        #: stack with ``setCentralWidget`` (MultiView's grid of views, which
+        #: holds this viewport), or a blank placeholder between its
+        #: ``takeCentralWidget`` and that call; None = the viewport itself.
+        #: See MainWindow.centralWidget.
+        self.stand_in = None
+
+    def slot_widget(self):
+        """The widget this project shows in the viewport stack."""
+        return self.stand_in if self.stand_in is not None else self.viewport
 
     def display_name(self) -> str:
         if self.path is not None:

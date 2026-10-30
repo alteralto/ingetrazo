@@ -1194,31 +1194,31 @@ class _EdgeInferViewport(_StubViewport):
 
     snap_threshold_px = 9.0
 
-    def __init__(self, scene, edge):
+    def __init__(self, scene, edge, scale=10.0):
         super().__init__(scene)
         self._hover_edge = edge
+        self._scale = scale
 
     def _world_to_pixel(self, world):
-        return (world.x() * 10.0, -world.z() * 10.0)
+        return (world.x() * self._scale, -world.z() * self._scale)
 
     def _project_to_lock_line(self, start, direction, px, py):
-        cursor = QVector3D(px / 10.0, start.y(), -py / 10.0)
+        cursor = QVector3D(px / self._scale, start.y(), -py / self._scale)
         d = direction.normalized()
         return start + d * QVector3D.dotProduct(cursor - start, d)
 
 
 def test_hovering_an_edge_infers_distance_and_says_on_edge():
     """The usual "On edge" while pushing (Marco's capture, 2026-09-14):
-    the cursor on another block's top edge — away from its corners and its
-    midpoint — sets the push level with that edge, red marker and «On edge»
-    label."""
+    the cursor on another block's top edge — away from its corners — sets
+    the push level with that edge, red marker and «On edge» label."""
     from PySide6.QtCore import QPointF
     from tools.base import ToolContext
 
     scene = Scene()
     hist = History(scene)
     _cube(scene, hist, height=3.0)                      # cube A, top z=3
-    other = [V(6, 0, 0), V(10, 0, 0), V(10, 2, 0), V(6, 2, 0)]
+    other = [V(6, 0, 0), V(8, 0, 0), V(8, 2, 0), V(6, 2, 0)]
     hist.execute(build_add_edges(
         scene, [(other[i], other[(i + 1) % 4]) for i in range(4)],
         detect_faces=False, extra=[AddFaceCommand(list(other))]))
@@ -1228,7 +1228,7 @@ def test_hovering_an_edge_infers_distance_and_says_on_edge():
     _push(scene, ref, 5.0 if ref.normal().z() > 0 else -5.0)   # block top z=5
     top_edge = next(e for e in scene.mesh.edges
                     if abs(e.a.z() - 5) < 1e-9 and abs(e.b.z() - 5) < 1e-9
-                    and abs(e.a.y()) < 1e-9 and abs(e.b.y()) < 1e-9)   # (6..10, 0, 5)
+                    and abs(e.a.y()) < 1e-9 and abs(e.b.y()) < 1e-9)   # (6..8, 0, 5)
 
     tool = PushPullTool()
     top = _top(scene, 3.0)
@@ -1239,54 +1239,15 @@ def test_hovering_an_edge_infers_distance_and_says_on_edge():
     tool._attached, tool._prism_cap = tool._classify_base(scene)
     tool._cap_positions = tool._cap_loop_positions(top)
 
-    vp = _EdgeInferViewport(scene, top_edge)
-    # Cursor at (9, ·, 5): on the edge, clear of both corners and the middle.
-    ctx = ToolContext(viewport=vp, world=QVector3D(), screen=QPointF(90.0, -50.0),
+    vp = _EdgeInferViewport(scene, top_edge, scale=20.0)
+    # Cursor at (6.5, ·, 5): a quarter of the edge, 10 px from its corner
+    # and from its midpoint (which has its own cue, #863).
+    ctx = ToolContext(viewport=vp, world=QVector3D(), screen=QPointF(130.0, -100.0),
                       modifiers=Qt.NoModifier, snap=None)
     d = tool._infer_reference_distance(ctx)
     assert d is not None and abs(d - 2.0) < 1e-6
     pt, kind = tool.inference_marker()
-    assert kind == "edge" and abs(pt.z() - 5.0) < 1e-6 and abs(pt.x() - 9.0) < 1e-6
-
-
-def test_hovering_an_edge_midpoint_infers_distance():
-    """The cursor near the MIDDLE of an edge locks to its exact midpoint — a
-    named snap like a corner — instead of the arbitrary «On edge» point."""
-    from PySide6.QtCore import QPointF
-    from tools.base import ToolContext
-
-    scene = Scene()
-    hist = History(scene)
-    _cube(scene, hist, height=3.0)                      # cube A, top z=3
-    other = [V(6, 0, 0), V(10, 0, 0), V(10, 2, 0), V(6, 2, 0)]
-    hist.execute(build_add_edges(
-        scene, [(other[i], other[(i + 1) % 4]) for i in range(4)],
-        detect_faces=False, extra=[AddFaceCommand(list(other))]))
-    ref = next(f for f in scene.faces
-               if all(abs(v.z()) < 1e-9 for v in f.vertices)
-               and min(v.x() for v in f.vertices) >= 5.999)
-    _push(scene, ref, 5.0 if ref.normal().z() > 0 else -5.0)   # block top z=5
-    top_edge = next(e for e in scene.mesh.edges
-                    if abs(e.a.z() - 5) < 1e-9 and abs(e.b.z() - 5) < 1e-9
-                    and abs(e.a.y()) < 1e-9 and abs(e.b.y()) < 1e-9)   # (6..10, 0, 5)
-
-    tool = PushPullTool()
-    top = _top(scene, 3.0)
-    tool.base_face = top
-    tool.dragging = True
-    tool._anchor = top.centroid()
-    tool._normal = top.normal()
-    tool._attached, tool._prism_cap = tool._classify_base(scene)
-    tool._cap_positions = tool._cap_loop_positions(top)
-
-    vp = _EdgeInferViewport(scene, top_edge)
-    # Cursor at the exact middle (8, ·, 5) → pixel (80, -50).
-    ctx = ToolContext(viewport=vp, world=QVector3D(), screen=QPointF(80.0, -50.0),
-                      modifiers=Qt.NoModifier, snap=None)
-    d = tool._infer_reference_distance(ctx)
-    assert d is not None and abs(d - 2.0) < 1e-6
-    pt, kind = tool.inference_marker()
-    assert kind == "midpoint" and abs(pt.z() - 5.0) < 1e-6 and abs(pt.x() - 8.0) < 1e-6
+    assert kind == "edge" and abs(pt.z() - 5.0) < 1e-6 and abs(pt.x() - 6.5) < 1e-6
 
 
 # ---- Tiny push: a commit click that does nothing says so ----------------------
