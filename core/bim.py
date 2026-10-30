@@ -287,10 +287,12 @@ def collect_objects(scene, memo: dict | None = None) -> list[dict]:
     for g, base in _placed_groups(scene.groups):
         tag = getattr(g, "ifc", None)
         if not tag:
+            found = _face_tags_in(g.mesh, memo, seen)
+            if not found:
+                continue            # most groups: no matrix to compose
             m = _compose(base, getattr(g, "xform", None))
             for obj_id, (ftag, faces) in sorted(
-                    _face_tags_in(g.mesh, memo, seen).items(),
-                    key=lambda kv: kv[0] or 0):
+                    found.items(), key=lambda kv: kv[0] or 0):
                 if m is not None:
                     faces = _moved_faces(faces, m)
                 out.append({

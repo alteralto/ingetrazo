@@ -4607,9 +4607,20 @@ class BimPanel(QWidget):
         if key == getattr(self, "_takeoff_key", None):
             return
         self._takeoff_key = key
+        # Nothing tagged at the last takeoff, and only commands that keep
+        # every tag since (a Move, a Rotate): still nothing — without the
+        # walk of every group (26 ms per edit on the 21 406 of #158).
+        hist = getattr(self._window.viewport, "history", None)
+        if (hist is not None and not self._objects
+                and getattr(self, "_untagged_scene", None) == id(scene)
+                and hist.tags_cv == scene.content_version):
+            return
         # A memo per panel: an edit re-measures only the objects it touched.
         memo = self.__dict__.setdefault("_takeoff_memo", {})
         self._objects = collect_objects(scene, memo)
+        self._untagged_scene = None if self._objects else id(scene)
+        if hist is not None:
+            hist.tags_cv = scene.content_version
         self.tree.clear()
         self._containers = []
         from core import outliner
