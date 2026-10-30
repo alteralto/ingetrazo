@@ -3247,5 +3247,7 @@
  "Next Project": "โปรเจกต์ถัดไป",
  "Bring the next project tab to the front.": "นำแท็บของโปรเจกต์ถัดไปมาไว้ด้านหน้า",
  "Previous Project": "โปรเจกต์ก่อนหน้า",
- "Bring the previous project tab to the front.": "นำแท็บของโปรเจกต์ก่อนหน้ามาไว้ด้านหน้า"
+ "Bring the previous project tab to the front.": "นำแท็บของโปรเจกต์ก่อนหน้ามาไว้ด้านหน้า",
+ "Restore defaults": "คืนค่าเริ่มต้น",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "คืนการตั้งค่าในหน้าต่างนี้เป็นค่าที่มากับ IngeTrazo จะไม่มีการบันทึกจนกว่าคุณจะกด ตกลง ภาษา ผู้ช่วย AI ปุ่มลัด และหน่วยของเอกสารที่เปิดอยู่จะคงเดิม"
 }

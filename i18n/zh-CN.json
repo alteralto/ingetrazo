@@ -3245,5 +3245,7 @@
  "Next Project": "下一个项目",
  "Bring the next project tab to the front.": "将下一个项目的标签页切换到前面。",
  "Previous Project": "上一个项目",
- "Bring the previous project tab to the front.": "将上一个项目的标签页切换到前面。"
+ "Bring the previous project tab to the front.": "将上一个项目的标签页切换到前面。",
+ "Restore defaults": "恢复默认值",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "将此窗口的设置恢复为 IngeTrazo 的初始状态。在您按下“确定”之前不会保存任何内容。语言、AI 助手、键盘快捷键和当前文档的单位保持不变。"
 }

@@ -3245,5 +3245,7 @@
  "Next Project": "Progetto successivo",
  "Bring the next project tab to the front.": "Porta in primo piano la scheda del progetto successivo.",
  "Previous Project": "Progetto precedente",
- "Bring the previous project tab to the front.": "Porta in primo piano la scheda del progetto precedente."
+ "Bring the previous project tab to the front.": "Porta in primo piano la scheda del progetto precedente.",
+ "Restore defaults": "Ripristina predefiniti",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "Riporta le impostazioni di questa finestra a come arriva IngeTrazo. Non viene salvato nulla finché non premi OK. La lingua, l'Assistente IA, le scorciatoie da tastiera e le unità del documento aperto restano come sono."
 }
