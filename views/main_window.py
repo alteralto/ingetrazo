@@ -5420,8 +5420,15 @@ class MainWindow(QMainWindow):
                 from PySide6.QtWidgets import QApplication
                 md = QApplication.clipboard().mimeData()
                 source = getattr(md, "clip", None)
-                other = clip_transfer.own(
-                    vp.clipboard, getattr(vp, "_clip_adopted_from", None))
+                # Only a copy that one of the OTHER tabs still holds: a
+                # stale offer (a closed window's, a clipboard set by code)
+                # must not replace this project's own.
+                if source is not None and any(
+                        d.viewport.clipboard is source
+                        for d in self._documents if d is not self._doc):
+                    other = clip_transfer.own(
+                        vp.clipboard,
+                        getattr(vp, "_clip_adopted_from", None))
             except Exception:  # noqa: BLE001 - a bad clipboard must not break Paste
                 other = None
         if other is not None:
