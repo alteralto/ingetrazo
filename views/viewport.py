@@ -722,6 +722,38 @@ def _content_ver(vp):
     return getattr(sc, "content_version", sc.version)
 
 
+def _lazy_edge_may_be_curve(mesh, a, b, tol=1e-3) -> bool:
+    """Whether the edge of ``mesh`` from ``a`` to ``b`` (its own space) may
+    be a curve's, asked of a still-lazy mesh's plan without building it.
+    False only when no edge with both ends within ``tol`` of the two points
+    — far wider than the weld lookups that find the real edge — carries a
+    curve; a built (or never lazy) mesh always answers True."""
+    from core.lazy_mesh import plan_of
+    plan = plan_of(mesh)
+    if plan is None:
+        return True
+    if not len(plan.edges):
+        return False
+    curved = plan.extra.get("curved_edges")
+    if curved is None:
+        import numpy as np
+        curved = plan.extra["curved_edges"] = np.flatnonzero(
+            np.fromiter((c is not None for c in plan.curve), dtype=bool,
+                        count=len(plan.curve)))
+    if not len(curved):
+        return False
+    import numpy as np
+    ends = plan.edges[curved]
+    p0, p1 = plan.pos[ends[:, 0]], plan.pos[ends[:, 1]]
+    pa = np.array((a.x(), a.y(), a.z()))
+    pb = np.array((b.x(), b.y(), b.z()))
+
+    def near(p, q):
+        return (np.abs(p - q) <= tol).all(axis=1)
+    return bool(((near(p0, pa) & near(p1, pb))
+                 | (near(p0, pb) & near(p1, pa))).any())
+
+
 def _snap_dropped_loose(vp):
     """Ids of the loose edges the inference must not land on, cached per scene
     version. An EMPTY set means ``Viewport._snap_scene`` may hand the raw
@@ -14762,7 +14794,7 @@ class Viewport(QOpenGLWidget):
         g = pseudo.group
         mesh = getattr(g, "mesh", None)
         xf = getattr(g, "xform", None)
-        if mesh is None or not mesh.edges:
+        if mesh is None:
             return None
         inv = None
         if xf is not None:
@@ -14771,6 +14803,13 @@ class Viewport(QOpenGLWidget):
                 return None
         la = inv.map(pseudo.a) if inv is not None else pseudo.a
         lb = inv.map(pseudo.b) if inv is not None else pseudo.b
+        if not _lazy_edge_may_be_curve(mesh, la, lb):
+            # A lazy mesh with no curve edge where the lookups below could
+            # land: building it (~0.5 s for a big group of the plant of
+            # #158, on the hover that crosses into it) would answer None.
+            return None
+        if not mesh.edges:
+            return None
         # The mesh's own registry: two O(1) vertex lookups (tolerant, the
         # weld grid) and the edge between them by incidence. This used to
         # build a dict of EVERY edge of the group, keyed by rounded
