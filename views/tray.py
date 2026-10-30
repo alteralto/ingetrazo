@@ -2005,6 +2005,12 @@ class MaterialsPanel(QWidget):
 
     COLS = 5
 
+    def showEvent(self, ev) -> None:
+        super().showEvent(ev)
+        if getattr(self, "_in_model_stale", False):
+            self._in_model_stale = False
+            self.refresh_in_model()
+
     def __init__(self, window) -> None:
         super().__init__()
         self._window = window
@@ -4613,6 +4619,13 @@ class Tray(QDockWidget):
         if (cv != getattr(self.materials, "_in_model_cv", None)
                 and cv != getattr(getattr(vp, "history", None),
                                   "paint_cv", None)):
+            if (self.materials._window.isVisible()
+                    and not self.materials.isVisible()):
+                # Its tab not shown: refreshed on showing, as the
+                # Components and Layers lists are (~0.15 s of every edit
+                # on the plant of #158, for swatches nobody sees).
+                self.materials._in_model_stale = True
+                return self._after_materials()
             timer = getattr(self, "_mat_refresh_timer", None)
             if timer is None:
                 from PySide6.QtCore import QTimer
@@ -4620,6 +4633,9 @@ class Tray(QDockWidget):
                 timer.setSingleShot(True)
                 timer.timeout.connect(self.materials.refresh_in_model)
             timer.start(300)
+        self._after_materials()
+
+    def _after_materials(self) -> None:
         self.scenes.refresh()
         self.components.on_scene_changed()
         self.parts.refresh()
