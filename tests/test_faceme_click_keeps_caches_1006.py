@@ -139,3 +139,43 @@ def test_a_box_over_a_figure_builds_the_camera_once(monkeypatch):
     finally:
         win._saved_version = vp.scene.version
         win.close()
+
+
+def test_big_figure_faces_go_to_the_native_earcut_with_the_same_triangles():
+    """A figure's face with many holes is triangulated by the engine's
+    earcut (the villa's 18 took ~40 s in Python, 0.7 s natively) — the
+    same triangles, corner for corner. Without the Rust engine nothing is
+    seeded and the Python earcut does it as before."""
+    import core._native as _native
+    win = _window()
+    vp = win.viewport
+    try:
+        outer = [V(0, 2, 0), V(4, 2, 0), V(4, 2, 4), V(0, 2, 4)]
+        holes = []
+        for i in range(4):
+            for j in range(4):
+                x, z = 0.3 + i * 0.95, 0.3 + j * 0.95
+                holes.append([V(x, 2, z), V(x, 2, z + 0.5),
+                              V(x + 0.5, 2, z + 0.5), V(x + 0.5, 2, z)])
+        g = Group(Mesh(), name="Susan")
+        g.billboard = "mesh"
+        f = g.mesh.add_face(outer, holes)
+        f.attrs["color"] = (0.2, 0.2, 0.2)
+        vp.scene.groups.append(g)
+        vp.scene.version += 1
+        vp._tri_memo = None
+        vp._seed_tris_native([f])
+        seeded = (vp._tri_memo or (None, {}))[1].get(id(f))
+        if _native.native is None or _native.qt_hypot() is None:
+            assert seeded is None
+            return
+        assert seeded is not None and seeded[0] is f
+        python = f.triangulate(vp._normal_of(f))
+
+        def corners(tris):
+            return [tuple((p.x(), p.y(), p.z()) for p in t) for t in tris]
+        assert corners(seeded[1]) == corners(python)
+        assert vp._tris_of(f) is seeded[1]
+    finally:
+        win._saved_version = vp.scene.version
+        win.close()

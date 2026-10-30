@@ -6846,6 +6846,60 @@ class Viewport(QOpenGLWidget):
                 face, face.triangulate(self._normal_of(face)))
         return hit[1]
 
+    #: A face this big (corners, holes included) is worth handing to the
+    #: native earcut ahead of ``_tris_of``.
+    NATIVE_TRIS_MIN_CORNERS = 64
+
+    def _seed_tris_native(self, faces) -> None:
+        """Fill ``_tris_of``'s memo for the big faces among ``faces`` in one
+        call to the engine's earcut (``face_geometry``: the same port, node
+        for node, triangulating with the same unit normal — its parity is
+        tests/test_face_geometry_native.py). A vector-art figure from an
+        imported file is faces with thousands of holes: the Python earcut
+        took ~40 s over the villa's 18 (issue #1006). Without the Rust
+        engine nothing happens and ``_tris_of`` works as always."""
+        import sys
+        import numpy as np
+        import core._native as _native
+        nat = _native.native
+        if nat is None or _native.qt_hypot() is None:
+            return
+        memo = getattr(self, "_tri_memo", None)
+        if memo is None or memo[0] != _cache_ver(self):
+            memo = self._tri_memo = (_cache_ver(self), {})
+        big = []
+        for f in faces:
+            if not hasattr(f, "loop") or len(f.loop) < 3:
+                continue
+            hit = memo[1].get(id(f))
+            if hit is not None and hit[0] is f:
+                continue
+            rings = [f.vertices] + [h for h in f.holes if len(h) >= 3]
+            if sum(len(r) for r in rings) >= self.NATIVE_TRIS_MIN_CORNERS:
+                big.append((f, rings))
+        if not big:
+            return
+        pts, sizes, counts = [], [], []
+        for _f, rings in big:
+            counts.append(len(rings))
+            for r in rings:
+                sizes.append(len(r))
+                pts.extend(r)
+        pos = np.array([(p.x(), p.y(), p.z()) for p in pts], np.float32)
+        try:
+            out = nat.face_geometry(
+                pos, np.arange(len(pts), dtype=np.int64),
+                np.asarray(sizes, np.int64), np.asarray(counts, np.int64),
+                _native.qt_hypot(), sys.version_info >= (3, 12))
+        except Exception:  # noqa: BLE001 — then the Python earcut
+            return
+        tris_u, tri_face_u = out[6], out[7]
+        per_face: list = [[] for _ in big]
+        for (a, b, c), fi in zip(tris_u.tolist(), tri_face_u.tolist()):
+            per_face[fi].append((pts[a], pts[b], pts[c]))
+        for (f, _rings), tris in zip(big, per_face):
+            memo[1][id(f)] = (f, tris)
+
     def _normal_of(self, face):
         """``face.normal()`` memoised per scene version (see _tris_of):
         the shading of every loose face recomputes the Newell normal 3-4
@@ -7971,6 +8025,7 @@ class Viewport(QOpenGLWidget):
             return cur[1]
         import numpy as np
         mesh = self._billboard_mesh(g)       # world space, matrix applied
+        self._seed_tris_native(mesh.faces)
         by_tex: dict = {}
         by_color: dict = {}      # rgb tuple -> interleaved pos+uv (uv unused)
         n0 = None
