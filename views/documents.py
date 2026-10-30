@@ -92,19 +92,20 @@ class DocumentHost:
         setattr(self._host_window, name, value)
 
 
-def follow_active(viewport):
-    """The viewport of the tab in front of ``viewport``'s window — for a
-    panel built with the viewport of its day that must act on whichever
-    project the user is looking at. A viewport outside a tabbed window
-    (tests, a lone widget) is returned as it is."""
+def live_viewport(viewport):
+    """A callable that answers the viewport of the project in front of
+    ``viewport``'s window — what a panel built with the viewport of its day
+    keeps, so it acts on whichever project the user is looking at. It keeps
+    the WINDOW, never that viewport: a panel holding a viewport would hold
+    its whole closed project in memory. A viewport outside a tabbed window
+    (tests, a lone widget) is answered as it is."""
     try:
         win = viewport.window()
     except (AttributeError, RuntimeError):
-        return viewport
-    live = getattr(win, "viewport", None) if win is not None else None
-    if live is None or not hasattr(win, "documents"):
-        return viewport
-    return live
+        win = None
+    if win is not None and hasattr(win, "documents"):
+        return lambda: win.viewport
+    return lambda: viewport
 
 
 class ProjectTabBar(QWidget):

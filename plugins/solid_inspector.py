@@ -665,12 +665,12 @@ class SolidInspectorPanel(QWidget):
     def _viewport(self):
         """The viewport of the project in front (projects in tabs, #1066):
         the one handed in at setup may be a tab in the back, or closed."""
-        from views.documents import follow_active
-        return follow_active(self._viewport_at_start)
+        return self._live_viewport()
 
     def __init__(self, viewport, parent=None) -> None:
         super().__init__(parent)
-        self._viewport_at_start = viewport
+        from views.documents import live_viewport
+        self._live_viewport = live_viewport(viewport)
         self._rows: list = []          # payload per table row
         #: The problem on screen: {"name", "index", "count", "item",
         #: "mesh", "matrix"} — or None.

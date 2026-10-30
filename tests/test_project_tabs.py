@@ -355,6 +355,21 @@ def test_a_closed_project_lets_its_memory_go(win, tmp_path, monkeypatch):
     assert scene() is None, "the closed scene is still alive"
 
 
+def test_closing_the_first_tab_lets_it_go_too(win, tmp_path):
+    """The bundled panels were built with the first tab's viewport: they
+    must not keep it (and its whole project) alive once it is closed."""
+    win.open_path(_igz(tmp_path, "first.igz"))
+    vp = weakref.ref(win.viewport)
+    scene = weakref.ref(win.viewport.scene)
+    win.close_document(ask=False)
+    _settle()
+    gc.collect()
+    _settle()
+    gc.collect()
+    assert vp() is None, "the first viewport is still alive"
+    assert scene() is None
+
+
 # ---- auto-save and recovery ---------------------------------------------
 def test_each_untitled_project_autosaves_to_its_own_slot(win):
     from core import autosave
