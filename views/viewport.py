@@ -125,7 +125,8 @@ from core.group import Group, copy_group, world_mesh
 from core.mesh import Edge, Face
 from core.history import EraseSelectionCommand, History
 from core.scene import Scene
-from core.style import DEFAULT_BACK_COLOR, effective_back_color
+from core.style import (DEFAULT_BACK_COLOR, DEFAULT_FACE_COLOR,
+                        effective_back_color)
 from core.materials import material_sig as _material_sig
 from core.snap import SnapResult, _AXIS_VECTORS
 from core.texture import face_uv_axes
@@ -661,12 +662,49 @@ _BY_LAYER_MODES = ("textures", "shaded", "xray")
 
 def _layer_look_sig(scene) -> tuple:
     """What of the layers changes the paint objects are drawn in: Colour by
-    layer, and each layer's colour and transparency."""
+    layer, and each layer's colour and transparency — and the style's Front
+    color, which dresses the faces that wear no material."""
     style = getattr(scene, "display_style", None)
     by_layer = bool(getattr(style, "color_by_layer", False))
     return (by_layer, getattr(style, "face_mode", None) if by_layer else None,
             tuple((ly.name, ly.color, ly.opacity)
-                  for ly in getattr(scene, "layers", ())))
+                  for ly in getattr(scene, "layers", ())),
+            _front_tint(style))
+
+
+#: The face modes that draw the per-vertex colour, where the style's Front
+#: color reaches the default faces through their bake. Hidden line and
+#: Monochrome paint every face flat in it with a uniform instead.
+_VCOLOR_MODES = ("textures", "shaded", "xray")
+
+
+def _front_tint(style):
+    """The colour the faces wearing no material bake to under ``style``
+    when its Front color is not the stock white, else ``None`` (the
+    warm-white default, unchanged). The default is TINTED by the pick
+    rather than replaced, so the stock white keeps the stock look and a
+    picked colour shows as itself (issue #776: the Front color only
+    showed in Hidden line and Monochrome)."""
+    if style is None or getattr(style, "face_mode", None) not in _VCOLOR_MODES:
+        return None
+    front = tuple(float(c) for c in
+                  (getattr(style, "front_color", None) or (1.0, 1.0, 1.0))[:3])
+    if all(c >= 0.999 for c in front):
+        return None
+    from core.style import DEFAULT_FACE_COLOR
+    return tuple(round(d * c, 4) for d, c in zip(DEFAULT_FACE_COLOR, front))
+
+
+def _with_front_tint(paint, style):
+    """``paint`` with the style's Front color standing in for the default
+    material when there is no container paint: a front-only paint, so the
+    back faces keep the back tint."""
+    if paint:
+        return paint
+    tint = _front_tint(style)
+    if tint is None:
+        return paint
+    return {"color": tint, "front_only": True}
 
 
 def _paint_of(vp, group):
@@ -692,8 +730,9 @@ def _paint_of(vp, group):
         memo = vp._layer_paints = (scene.version, {}, layer_fx(scene))
     fx = memo[2]
     if not by_layer and not fx:
-        return effective_material(group)
-    own = None if by_layer else effective_material(group)
+        return _with_front_tint(effective_material(group), style)
+    own = (None if by_layer
+           else _with_front_tint(effective_material(group), style))
     key = (by_layer, object_layer(group), material_sig(own))
     paint = memo[1].get(key)
     if paint is None:
@@ -1682,7 +1721,7 @@ class Viewport(QOpenGLWidget):
 
     # Soft warm white painted on faces with no material colour — like the matte
     # cardstock of an architecture model (a near-white default).
-    DEFAULT_FACE_COLOR = (0.96, 0.95, 0.925)
+    DEFAULT_FACE_COLOR = DEFAULT_FACE_COLOR
     # Fixed world light (from above, slightly front-right) for the subtle diffuse
     # face shading. World-fixed so shading is stable while orbiting.
     _LIGHT = QVector3D(0.35, 0.25, 1.0).normalized()
@@ -6991,8 +7030,18 @@ class Viewport(QOpenGLWidget):
         return total
 
     def _sync_edges(self) -> None:
-        if _cache_ver(self) == self._edges_version:
+        # The style's Front color bakes into the default faces without a
+        # version bump (a style edit is not a document edit): a new tint
+        # re-runs the sync, whose content key sees it through the
+        # placements epoch (``_layer_look_sig``).
+        tint = (None if getattr(self, "plano_style", None) is not None
+                else _front_tint(getattr(self, "style_override", None)
+                                 or getattr(self.scene, "display_style",
+                                            None)))
+        if _cache_ver(self) == self._edges_version \
+                and tint == getattr(self, "_edges_front_tint", None):
             return
+        self._edges_front_tint = tint
         _st0 = _time_mod.perf_counter() if _PERF else 0.0
 
         # The scene changed: purge hover/selection references to entities that
@@ -7623,7 +7672,8 @@ class Viewport(QOpenGLWidget):
                 tuple(sorted(getattr(self, "_preview_groups", None) or ())),
                 frozenset(map(id, sup)) if sup else None,
                 bool(getattr(sc, "show_hidden_objects", False)),
-                bool(getattr(sc, "show_hidden_geometry", False)))
+                bool(getattr(sc, "show_hidden_geometry", False)),
+                getattr(self, "_edges_front_tint", None))
 
     def _sync_selection_buffers(self) -> None:
         """The selection's highlight buffers (``_sync_edges``)."""
