@@ -892,6 +892,8 @@ class PreferencesDialog(QDialog):
         pick(self._theme, DARK)
         pick(self._accent, ORANGE)
         pick(self._rest, "fade")
+        from views.viewport import EDIT_REST_FADE
+        self._rest_fade.setValue(round(EDIT_REST_FADE * 100))
         self._autosave.setChecked(True)
         self._autosave_min.setValue(5)
         self._backup.setChecked(True)
@@ -910,11 +912,11 @@ class PreferencesDialog(QDialog):
         if self._rust.isEnabled():
             self._rust.setChecked(_native.DEFAULT == "1")
 
+        # The 3D Mouse page has its own reset (Original mapping, every axis
+        # at 100 %, nothing inverted); the saved named profiles stay.
         nd = NdofSettings()
         self._ndof_on.setChecked(nd.enabled)
-        self._ndof_speed.setValue(int(round(nd.sensitivity * 100)))
-        for box in self._ndof_inv.values():
-            box.setChecked(False)
+        self._reset_ndof_profile()
         self._ndof_lock.setChecked(nd.lock_rotation)
 
         pick(self._obj_unit, "m")

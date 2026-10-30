@@ -107,6 +107,11 @@ def test_restore_puts_every_control_back_to_its_default(settings_file):
     dlg = PreferencesDialog(_Win())
     assert dlg._obj_unit.currentData() == "ft"        # the tuned profile
     assert not dlg._autosave.isChecked()
+    dlg._rest_fade.setValue(30)
+    _action, invert, speed = next(iter(dlg._ndof_axes.values()))
+    invert.setChecked(True)
+    speed.setValue(200)
+    assert dlg._ndof_preset.currentData() == "custom"
     dlg.restore_defaults()
     assert dlg._autosave.isChecked()
     assert dlg._autosave_min.value() == 5
@@ -128,7 +133,11 @@ def test_restore_puts_every_control_back_to_its_default(settings_file):
     assert dlg._coord.currentData() == "geo"
     assert dlg._ndof_on.isChecked()
     assert dlg._ndof_speed.value() == 100
-    assert not any(b.isChecked() for b in dlg._ndof_inv.values())
+    assert dlg._ndof_preset.currentData() == "original"
+    for action, invert, speed in dlg._ndof_axes.values():
+        assert not invert.isChecked()
+        assert speed.value() == 100
+    assert dlg._rest_fade.value() == 75
 
 
 def test_ok_saves_the_defaults_and_keeps_language_and_ai(settings_file):
