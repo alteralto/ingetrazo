@@ -3226,7 +3226,8 @@ class StylesPanel(QWidget):
 
         grid.addWidget(QLabel(tr("Front color:")), 4, 0)
         self._front_c = self._swatch(
-            tr("Front color — paints faces in Hidden line and Monochrome"),
+            tr("Front color — paints the faces with no material (every "
+               "face in Hidden line and Monochrome)"),
             "front_color")
         grid.addWidget(self._front_c, 4, 1)
 
@@ -3443,9 +3444,8 @@ class StylesPanel(QWidget):
         if style is None:
             return None
         mode = style.face_mode
-        if attr == "front_color" and mode not in ("hidden_line", "monochrome"):
-            return tr("Front color saved — it paints faces in Hidden line "
-                      "and Monochrome modes.")
+        if attr == "front_color" and mode == "wireframe":
+            return tr("Front color saved — Wireframe draws no faces.")
         if attr == "back_color" and mode in ("hidden_line", "wireframe"):
             return tr("Back color saved — it paints back faces in Textures, "
                       "Shaded, Monochrome and X-ray modes.")

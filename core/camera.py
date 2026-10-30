@@ -50,6 +50,11 @@ MAX_DISTANCE = 10000.0
 #: four distances is the whole model behind the target with room to spare.
 FAR_PER_DISTANCE = 4.0
 
+#: A parallel view's depth range, in multiples of the farthest reach of
+#: what it holds from the eye (``OrbitCamera.parallel_depth``): the axes
+#: and guides run past the model, and a dragged object may too.
+PARALLEL_REACH_MARGIN = 4.0
+
 
 class OrbitCamera:
     """Camera that orbits around a target point."""
@@ -69,6 +74,10 @@ class OrbitCamera:
         #: (José Castro Basso, FADU–UDELAR, for teaching architectural
         #: drawing). Only in perspective; see ``_level_forward``.
         self.two_point = False
+        #: What the view holds, as a bounding sphere ``(centre, radius)``
+        #: the viewport keeps up to date, or ``None`` (unknown). Parallel
+        #: projection fits its depth range to it (``parallel_depth``).
+        self.depth_reach = None
 
     # ---- Derived state ------------------------------------------------------
     def eye(self) -> QVector3D:
@@ -199,9 +208,30 @@ class OrbitCamera:
             # framing matches what the user sees in perspective.
             half_h = self.distance * math.tan(math.radians(self.fov_deg) / 2.0)
             half_w = half_h * self.aspect
-            far = self.far_plane()
-            m.ortho(-half_w, half_w, -half_h, half_h, -far, far)
+            depth = self.parallel_depth()
+            m.ortho(-half_w, half_w, -half_h, half_h, -depth, depth)
         return m
+
+    def parallel_depth(self) -> float:
+        """How far in front of and behind the eye a parallel view reaches.
+
+        The depth buffer splits this range evenly, so ±``far_plane()`` —
+        ±10 km — left 1.2 mm steps: a smooth surface and the lines over it
+        traded places in a zigzag that perspective, with its 0.1 m near
+        plane, never showed (issue #874). With what the view holds known
+        (``depth_reach``), the range is a few times its reach from the eye
+        — room for the axes, guides and a drag past it — and never more
+        than before."""
+        far = self.far_plane()
+        reach = self.depth_reach
+        if reach is None:
+            return far
+        centre, radius = reach
+        held = (self.eye() - centre).length() + float(radius)
+        if not math.isfinite(held):
+            return far
+        return min(far, max(self.distance * FAR_PER_DISTANCE,
+                            held * PARALLEL_REACH_MARGIN, 1.0))
 
     def near_plane(self) -> float:
         """The near clipping distance in perspective: the usual ``znear``

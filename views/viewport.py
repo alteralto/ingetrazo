@@ -125,7 +125,8 @@ from core.group import Group, copy_group, world_mesh
 from core.mesh import Edge, Face
 from core.history import EraseSelectionCommand, History
 from core.scene import Scene
-from core.style import DEFAULT_BACK_COLOR, effective_back_color
+from core.style import (DEFAULT_BACK_COLOR, DEFAULT_FACE_COLOR,
+                        effective_back_color)
 from core.materials import material_sig as _material_sig
 from core.snap import SnapResult, _AXIS_VECTORS
 from core.texture import face_uv_axes
@@ -661,12 +662,49 @@ _BY_LAYER_MODES = ("textures", "shaded", "xray")
 
 def _layer_look_sig(scene) -> tuple:
     """What of the layers changes the paint objects are drawn in: Colour by
-    layer, and each layer's colour and transparency."""
+    layer, and each layer's colour and transparency — and the style's Front
+    color, which dresses the faces that wear no material."""
     style = getattr(scene, "display_style", None)
     by_layer = bool(getattr(style, "color_by_layer", False))
     return (by_layer, getattr(style, "face_mode", None) if by_layer else None,
             tuple((ly.name, ly.color, ly.opacity)
-                  for ly in getattr(scene, "layers", ())))
+                  for ly in getattr(scene, "layers", ())),
+            _front_tint(style))
+
+
+#: The face modes that draw the per-vertex colour, where the style's Front
+#: color reaches the default faces through their bake. Hidden line and
+#: Monochrome paint every face flat in it with a uniform instead.
+_VCOLOR_MODES = ("textures", "shaded", "xray")
+
+
+def _front_tint(style):
+    """The colour the faces wearing no material bake to under ``style``
+    when its Front color is not the stock white, else ``None`` (the
+    warm-white default, unchanged). The default is TINTED by the pick
+    rather than replaced, so the stock white keeps the stock look and a
+    picked colour shows as itself (issue #776: the Front color only
+    showed in Hidden line and Monochrome)."""
+    if style is None or getattr(style, "face_mode", None) not in _VCOLOR_MODES:
+        return None
+    front = tuple(float(c) for c in
+                  (getattr(style, "front_color", None) or (1.0, 1.0, 1.0))[:3])
+    if all(c >= 0.999 for c in front):
+        return None
+    from core.style import DEFAULT_FACE_COLOR
+    return tuple(round(d * c, 4) for d, c in zip(DEFAULT_FACE_COLOR, front))
+
+
+def _with_front_tint(paint, style):
+    """``paint`` with the style's Front color standing in for the default
+    material when there is no container paint: a front-only paint, so the
+    back faces keep the back tint."""
+    if paint:
+        return paint
+    tint = _front_tint(style)
+    if tint is None:
+        return paint
+    return {"color": tint, "front_only": True}
 
 
 def _paint_of(vp, group):
@@ -692,8 +730,9 @@ def _paint_of(vp, group):
         memo = vp._layer_paints = (scene.version, {}, layer_fx(scene))
     fx = memo[2]
     if not by_layer and not fx:
-        return effective_material(group)
-    own = None if by_layer else effective_material(group)
+        return _with_front_tint(effective_material(group), style)
+    own = (None if by_layer
+           else _with_front_tint(effective_material(group), style))
     key = (by_layer, object_layer(group), material_sig(own))
     paint = memo[1].get(key)
     if paint is None:
@@ -1682,7 +1721,7 @@ class Viewport(QOpenGLWidget):
 
     # Soft warm white painted on faces with no material colour — like the matte
     # cardstock of an architecture model (a near-white default).
-    DEFAULT_FACE_COLOR = (0.96, 0.95, 0.925)
+    DEFAULT_FACE_COLOR = DEFAULT_FACE_COLOR
     # Fixed world light (from above, slightly front-right) for the subtle diffuse
     # face shading. World-fixed so shading is stable while orbiting.
     _LIGHT = QVector3D(0.35, 0.25, 1.0).normalized()
@@ -2054,6 +2093,7 @@ class Viewport(QOpenGLWidget):
         # Instanced pass: re-shade the prototype's baked tones for the
         # rotation of each copy (#482), against the bake's own light.
         self._loc_reshade = self._program.uniformLocation("u_reshade")
+        self._loc_back_shade = self._program.uniformLocation("u_back_shade")
         self._program.bind()
         self._program.setUniformValue(self._loc_reshade, 0)
         self._program.setUniformValue(
@@ -2256,6 +2296,44 @@ class Viewport(QOpenGLWidget):
             self._shown_projection = mode
             self.projectionChanged.emit(mode)
 
+    def _sync_depth_reach(self) -> None:
+        """Tell the camera what the view holds, for the depth range of a
+        parallel view (``OrbitCamera.parallel_depth``, issue #874): the
+        model's box, the reference images and figures, and the drawing
+        axes' origin. ``None`` — the old ±far range — while a base map or
+        a survey shows, whose extent the model's box does not know."""
+        cam = self.camera
+        if cam.perspective:
+            return                       # perspective does not read it
+        sc = self.scene
+        layer = getattr(sc, "tile_layer", None)
+        survey = getattr(sc, "photo_mesh", None)
+        if (layer is not None and getattr(layer, "visible", False)) \
+                or (survey is not None and getattr(survey, "visible", False)):
+            cam.depth_reach = None
+            return
+        from core import axes as _axes
+        lo, hi = sc.bounds()
+        pts = [_axes.ORIGIN]
+        if lo is not None:
+            pts += [lo, hi]
+        for im in getattr(sc, "image_planes", None) or ():
+            if sc.entity_visible(im):
+                pts.extend(im.corners())
+        for g in sc.groups:
+            if getattr(g, "billboard", False) and sc.entity_visible(g):
+                xf = g.xform
+                pts.append(QVector3D(xf.column(3).x(), xf.column(3).y(),
+                                     xf.column(3).z())
+                           if xf is not None else QVector3D())
+                pts.append(pts[-1] + QVector3D(0.0, 0.0, 3.0))
+        xs = [p.x() for p in pts]
+        ys = [p.y() for p in pts]
+        zs = [p.z() for p in pts]
+        a = QVector3D(min(xs), min(ys), min(zs))
+        b = QVector3D(max(xs), max(ys), max(zs))
+        cam.depth_reach = ((a + b) * 0.5, (b - a).length() * 0.5)
+
     def paintGL(self) -> None:
         self._tick = getattr(self, "_tick", 0) + 1     # a new epoch memo
         self._depth_clean = None          # see the read-back at the end
@@ -2265,6 +2343,7 @@ class Viewport(QOpenGLWidget):
             if self._gl is not None:          # a context below GL 3.3
                 self._gl.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             return
+        self._sync_depth_reach()
         _pt0 = _time_mod.perf_counter() if _PERF else 0.0
 
         # Render the 3D scene into our own FBO (which has a real depth buffer)
@@ -2773,6 +2852,7 @@ class Viewport(QOpenGLWidget):
             self._program.setUniformValue(self._loc_use_vcolor, 0)
             self._program.setUniformValue(self._loc_use_tex, 0)
             self._set_back_face_color()
+            self._program.setUniformValue(self._loc_back_shade, 1)
             self._dback_vao.bind()
             if split_db is None:
                 for _vs, _vc in db_draw:
@@ -2794,7 +2874,13 @@ class Viewport(QOpenGLWidget):
         # Instanced components (P2): eligible instances draw from their
         # prototype's local VBOs with per-instance matrices — the
         # consolidated passes above excluded them in _sync_edges.
+        # The instanced default backs shade the same way (the flag only
+        # speaks to back-facing fragments in the back colour; set for the
+        # whole call, which the recorded native replay sees too).
+        if mode in ("textures", "shaded") and not _NO_BACK_TINT:
+            self._program.setUniformValue(self._loc_back_shade, 1)
         self._draw_instanced_faces(mode, style)
+        self._program.setUniformValue(self._loc_back_shade, 0)
         # Shadows stop at the face passes: edges, overlays, previews and
         # billboards stay unlit (v1 scope).
         if getattr(self, "_frame_shadow", None) is not None:
@@ -7046,8 +7132,18 @@ class Viewport(QOpenGLWidget):
         return total
 
     def _sync_edges(self) -> None:
-        if _cache_ver(self) == self._edges_version:
+        # The style's Front color bakes into the default faces without a
+        # version bump (a style edit is not a document edit): a new tint
+        # re-runs the sync, whose content key sees it through the
+        # placements epoch (``_layer_look_sig``).
+        tint = (None if getattr(self, "plano_style", None) is not None
+                else _front_tint(getattr(self, "style_override", None)
+                                 or getattr(self.scene, "display_style",
+                                            None)))
+        if _cache_ver(self) == self._edges_version \
+                and tint == getattr(self, "_edges_front_tint", None):
             return
+        self._edges_front_tint = tint
         _st0 = _time_mod.perf_counter() if _PERF else 0.0
 
         # The scene changed: purge hover/selection references to entities that
@@ -7678,7 +7774,8 @@ class Viewport(QOpenGLWidget):
                 tuple(sorted(getattr(self, "_preview_groups", None) or ())),
                 frozenset(map(id, sup)) if sup else None,
                 bool(getattr(sc, "show_hidden_objects", False)),
-                bool(getattr(sc, "show_hidden_geometry", False)))
+                bool(getattr(sc, "show_hidden_geometry", False)),
+                getattr(self, "_edges_front_tint", None))
 
     def _sync_selection_buffers(self) -> None:
         """The selection's highlight buffers (``_sync_edges``)."""
@@ -10107,25 +10204,89 @@ class Viewport(QOpenGLWidget):
                              int(style.get("decimals", 2)),
                              bool(style.get("show_unit", True)))
 
+    #: Screen pixels between the occlusion samples of a long annotation
+    #: line (``_draw_occluded_segment``), and the most samples it takes.
+    _OCCLUSION_STEP_PX = 12.0
+    _OCCLUSION_MAX_SAMPLES = 128
+    #: Where a line goes behind something, its sample step is cut in this
+    #: many parts this many times: 1/64 of a step, under a pixel.
+    _OCCLUSION_SPLIT = 8
+    _OCCLUSION_ROUNDS = 2
+
     def _draw_occluded_segment(self, painter: QPainter, p3a: QVector3D,
                                p3b: QVector3D, samples: int = 16) -> None:
         """Draw the 3D segment ``p3a``–``p3b`` in screen space, skipping the
-        parts hidden behind solid geometry (CPU occlusion sample). A sub-segment
-        is drawn only when both its sampled ends are visible, so the line never
-        bleeds over the solid; the silhouette gap is sub-pixel at this density.
+        parts hidden behind solid geometry (CPU occlusion sample).
+
+        The line is sampled about every ``_OCCLUSION_STEP_PX`` on screen (at
+        least ``samples`` steps), and where one sample is seen and the next
+        is not, the point where it goes behind is pinned by halving the
+        step — the line stops AT the silhouette. Drawing only the steps
+        whose both ends were seen cut it back a whole sixteenth at a time,
+        and the cut jumped from step to step as the view turned: the
+        dimensions clipped in and out behind other surfaces (issue #918).
 
         The samples are projected and tested as one batch
         (``_project_samples``): doing it point by point rebuilt the camera's
         projection*view matrix for every sample — 432 rebuilds a frame for
         eight dimensions — and ran a NumPy 3x3 reduction per sample (#439)."""
-        pts = [p3a + (p3b - p3a) * (i / samples) for i in range(samples + 1)]
-        prev_px = None
-        prev_vis = False
-        for px, vis in self._project_samples(pts):
-            vis = px is not None and vis
-            if prev_px is not None and px is not None and prev_vis and vis:
-                painter.drawLine(QPointF(*prev_px), QPointF(*px))
-            prev_px, prev_vis = px, vis
+        d = p3b - p3a
+
+        def at(ts):
+            return [p3a + d * t for t in ts]
+
+        mvp = self.camera.projection_matrix() * self.camera.view_matrix()
+        ea = self._world_to_pixel(p3a, mvp)
+        eb = self._world_to_pixel(p3b, mvp)
+        n = samples
+        if ea is not None and eb is not None:
+            span = math.hypot(eb[0] - ea[0], eb[1] - ea[1])
+            n = max(samples, min(self._OCCLUSION_MAX_SAMPLES,
+                                 int(span / self._OCCLUSION_STEP_PX)))
+        ts = [i / n for i in range(n + 1)]
+        res = self._project_samples(at(ts))
+        pxs = [px for px, _v in res]
+        vis = [px is not None and v for px, v in res]
+        # The steps that change from seen to hidden (or back): each is cut
+        # in ``_OCCLUSION_SPLIT`` and narrowed to the part where it flips,
+        # every cut step in one batch per round.
+        cuts = [i for i in range(n)
+                if pxs[i] is not None and pxs[i + 1] is not None
+                and vis[i] != vis[i + 1]]
+        edge: dict = {}
+        if cuts:
+            k = self._OCCLUSION_SPLIT
+            lo = {i: ts[i] for i in cuts}          # t on sample i's side
+            hi = {i: ts[i + 1] for i in cuts}
+            edge = {i: pxs[i] if vis[i] else pxs[i + 1] for i in cuts}
+            for _ in range(self._OCCLUSION_ROUNDS):
+                probe = [(i, lo[i] + (hi[i] - lo[i]) * j / k)
+                         for i in cuts for j in range(1, k)]
+                got = self._project_samples(at([t for _i, t in probe]))
+                for c, i in enumerate(cuts):
+                    row = got[c * (k - 1):(c + 1) * (k - 1)]
+                    tt = [t for _i, t in probe[c * (k - 1):(c + 1) * (k - 1)]]
+                    new_lo, new_hi = lo[i], hi[i]
+                    for (px, v), t in zip(row, tt):
+                        if (px is not None and v) == vis[i]:
+                            new_lo = t
+                            if vis[i]:
+                                edge[i] = px      # the last seen, so far
+                        else:
+                            new_hi = t
+                            if not vis[i]:
+                                edge[i] = px      # the first seen, so far
+                            break
+                    lo[i], hi[i] = new_lo, new_hi
+        for i in range(n):
+            a, b = pxs[i], pxs[i + 1]
+            if a is None or b is None:
+                continue
+            if vis[i] and vis[i + 1]:
+                painter.drawLine(QPointF(*a), QPointF(*b))
+            elif edge.get(i) is not None:
+                start = a if vis[i] else b
+                painter.drawLine(QPointF(*start), QPointF(*edge[i]))
 
     def _project_samples(self, pts: list[QVector3D]):
         """Project ``pts`` to screen pixels and test each one against the
