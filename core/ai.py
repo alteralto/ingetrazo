@@ -46,6 +46,7 @@ def build_scope(viewport, scope: dict | None = None) -> dict:
     from PySide6.QtGui import QVector3D
     from core import bim
     from core.group import Group
+    from core.layers import Layer
     from core.mesh import Edge, Face, Mesh, Vertex
     scope = scope if scope is not None else {"__name__": "__ai__"}
     scope.update(
@@ -53,9 +54,31 @@ def build_scope(viewport, scope: dict | None = None) -> dict:
         mesh=viewport.scene.mesh, selection=viewport.scene.selection,
         groups=viewport.scene.groups, layers=viewport.scene.layers, bim=bim,
         QVector3D=QVector3D, Mesh=Mesh, Group=Group, Vertex=Vertex,
-        Edge=Edge, Face=Face)
+        Edge=Edge, Face=Face, Layer=Layer)
     scope.update(_recipe_helpers(viewport.scene))
     return scope
+
+
+def _check_scene_lists(scene) -> None:
+    """Refuse a recipe that left something foreign in the scene's lists.
+    Asked for «dos láminas», a model wrote ``layers.append('Lámina 1')``:
+    the step went through and every paint, hover and the Layers panel
+    raised «'str' object has no attribute 'name'» until the user undid it.
+    Raising here rolls the step back whole and
+    tells the model what each list takes."""
+    from core.composition import Composicion
+    from core.group import Group
+    from core.layers import Layer
+    for attr, cls, hint in (
+            ("layers", Layer, "Layer('nombre') (una CAPA/etiqueta)"),
+            ("groups", Group, "Group(mesh, name=...)"),
+            ("compositions", Composicion,
+             "sheet('nombre') (una LÁMINA del compositor)")):
+        for item in getattr(scene, attr, None) or ():
+            if not isinstance(item, cls):
+                raise TypeError(
+                    f"scene.{attr} solo admite {cls.__name__}: se añadió "
+                    f"{type(item).__name__} {item!r:.40}. Usa {hint}.")
 
 
 def _recipe_helpers(scene) -> dict:
@@ -354,8 +377,20 @@ def _recipe_helpers(scene) -> dict:
         out.append(_finish(roof_mesh, roof_color, f"{name} · Techo"))
         return out
 
+    def sheet(name=None, paper="A3", landscape=True):
+        """A new sheet of the composer (a page for printing, NOT a layer)
+        with one view frame filling it; the composer and the sheet tabs
+        pick it up on their own."""
+        from core.composition import Composicion
+        comps = scene.compositions
+        c = Composicion(name=name or f"Lámina {len(comps) + 1}",
+                        paper=paper, landscape=landscape)
+        c.frames.append(c.default_frame())
+        comps.append(c)
+        return c
+
     return {"box": box, "revolve": revolve, "extrude": extrude,
-            "prism": prism, "wall": wall, "house": house}
+            "prism": prism, "wall": wall, "house": house, "sheet": sheet}
 
 
 def _tidy_groups(scene) -> None:
@@ -406,6 +441,7 @@ def run_transactional(viewport, code: str, scope: dict) -> dict:
                     scope["_"] = result
                     print(repr(result))
             _tidy_groups(_scene)
+            _check_scene_lists(_scene)
         except Exception:
             traceback.print_exc(file=err_buf)
             raise
