@@ -240,6 +240,9 @@ CONTRIBUTORS = [
     ("Oleksandr Bolotov",
      "Ukrainian translation of the interface.",
      "https://github.com/bolotov"),
+    ("Amer Alhlhli",
+     "Arabic translation of the interface.",
+     "https://github.com/Alhlhli"),
 ]
 
 #: Roll speed: pixels per tick, and the tick.
