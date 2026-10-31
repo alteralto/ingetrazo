@@ -6641,6 +6641,10 @@ class ComposerWindow(QMainWindow):
         grid.addWidget(self.ruler_h, 0, 1)
         grid.addWidget(self.ruler_v, 1, 0)
         grid.addWidget(view, 1, 1)
+        # The sheet is a drawing: its rulers and canvas stay as they are in a
+        # right-to-left interface (#1067), the ruler on the left included.
+        from views.rtl import keep_ltr
+        keep_ltr(area)
         for bar in (view.horizontalScrollBar(), view.verticalScrollBar()):
             bar.valueChanged.connect(lambda *_a: self._refresh_rulers())
         return area

@@ -257,8 +257,17 @@ def _credits_html(people) -> str:
                else f"<b>{name}</b>")
         if name in STARRED:
             who = f"<span style='color:#e8a33d'>★</span> {who}"
-        rows.append(f"<p style='margin:0 0 10px 0'>{who}<br>{tr(role)}</p>")
+        rows.append(f"<p{_DIR()} style='margin:0 0 10px 0'>{who}<br>{tr(role)}</p>")
     return "".join(rows)
+
+
+def _DIR() -> str:  # noqa: N802
+    """A paragraph's direction attribute: rich text picks each paragraph's
+    direction from its first letter, and a credit starts with a Latin
+    name — right to left (#1067) it is said outright. Nothing left to
+    right."""
+    from views.rtl import is_rtl_ui
+    return " dir='rtl'" if is_rtl_ui() else ""
 
 
 class _Fade(QWidget):
@@ -446,6 +455,8 @@ class AboutDialog(QDialog):
         outer.addLayout(col, 1)
 
         def para(html: str) -> QLabel:
+            if _DIR():
+                html = f"<div{_DIR()}>{html}</div>"
             lab = QLabel(html, self)
             lab.setWordWrap(True)
             lab.setTextFormat(Qt.RichText)

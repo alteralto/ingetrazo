@@ -56,6 +56,13 @@ def _init_language() -> None:
     lang = i18n.resolve_language(QSettings().value("language"))
     i18n.set_language(lang)
     _install_qt_translator(lang)
+    # Arabic (#1067) and the other right-to-left languages mirror the
+    # interface. Qt would do it from its own catalogue's QT_LAYOUT_DIRECTION
+    # entry, which the buttons-only translator leaves out on purpose.
+    from views.rtl import apply_language_direction
+    app = QApplication.instance()
+    if app is not None:
+        apply_language_direction(app, lang)
 
 
 class _ButtonsOnlyTranslator(QTranslator):

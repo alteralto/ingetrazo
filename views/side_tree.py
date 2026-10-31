@@ -39,7 +39,9 @@ class _HeaderButton(QToolButton):
         opt.rect = self.rect()
         opt.orientation = Qt.Horizontal
         opt.position = QStyleOptionHeader.End
-        opt.text = self.text()
+        # «+3» stays «+3» in a right-to-left interface (#1067).
+        from views.rtl import isolate_ltr
+        opt.text = isolate_ltr(self.text(), self)
         opt.textAlignment = Qt.AlignCenter
         if self.isDown():
             opt.state |= QStyle.State_Sunken
