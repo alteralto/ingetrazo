@@ -15263,9 +15263,16 @@ class Viewport(QOpenGLWidget):
             store = self._proto_pts_store = {}
         editing = self._editing_meshes()
         valid: dict = {}
+        from core.mesh import DeferredMesh
         for g, _m in iter_placements(group):
             mesh = g.mesh
-            if mesh is None or not mesh.vertices or id(mesh) in valid:
+            if mesh is None or id(mesh) in valid:
+                continue
+            # A lazy mesh still unbuilt was never edited (an edit builds
+            # it): its cached points stand, and asking for its vertices
+            # would build it -- the box over a big model built them all.
+            lazy = type(mesh) is DeferredMesh
+            if not lazy and not mesh.vertices:
                 continue
             hit = store.get(id(mesh))
             if hit is None:
@@ -15273,7 +15280,7 @@ class Viewport(QOpenGLWidget):
             serial, arr = hit
             if (id(mesh) in editing
                     or getattr(mesh, "_mut_serial", None) != serial
-                    or len(arr) != len(mesh.vertices)):
+                    or (not lazy and len(arr) != len(mesh.vertices))):
                 del store[id(mesh)]
                 continue
             valid[id(mesh)] = arr

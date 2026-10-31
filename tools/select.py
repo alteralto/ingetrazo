@@ -134,6 +134,35 @@ def _box_loose_fast(viewport, rect, crossing):
     return edges, faces
 
 
+def _box_payload(viewport, pg):
+    """What the box test reads of one placement: the corners of its
+    triangles (``v0``, ``e1``, ``e2``) and its edges, in world space. A
+    component instance's full chunk transforms EVERY array of its
+    prototype's bake to world -- 1984 of them, 2.2 s of a box over a big
+    model, all of it thrown away: only the corners and the edges are
+    carried here, with the very maps the instance chunk uses. A chunk
+    already made for the instance is taken as it is."""
+    xf = getattr(pg, "xform", None)
+    if xf is None or getattr(pg, "mesh", None) is None:
+        return viewport._group_chunk(pg)
+    import numpy as np
+    from views.viewport import _paint_of, _placed_maps, _proto_wrapper
+    base = viewport._group_chunk(
+        _proto_wrapper(viewport, pg.mesh, _paint_of(viewport, pg)))
+    cur = (getattr(viewport, "_inst_chunks", None) or {}).get(id(pg))
+    if cur is not None and cur["ikey"] == (base["uid"], tuple(xf.data())):
+        return cur
+    _L, tv, tp = _placed_maps(xf)
+    a = np.frombuffer(base["edges"], np.float32).reshape(-1, 3)
+    out = {"v0": None, "e1": None, "e2": None,
+           "edges": tp(a.astype(np.float64)).astype(np.float32).tobytes()}
+    if base["v0"] is not None:
+        out["v0"] = tp(base["v0"])
+        out["e1"] = tv(base["e1"])
+        out["e2"] = tv(base["e2"])
+    return out
+
+
 def _box_group_fast(viewport, group, rect, crossing):
     """Vectorized box test for one (non-billboard) group via its chunk
     arrays. True/False, or None to fall back to the per-vertex walk."""
@@ -151,7 +180,7 @@ def _box_group_fast(viewport, group, rect, crossing):
     corners, edge_parts = [], []
     try:
         for pg in places:
-            ch = viewport._group_chunk(pg)
+            ch = _box_payload(viewport, pg)
             v0, e1, e2 = ch["v0"], ch["e1"], ch["e2"]
             if v0 is not None:
                 corners.extend((v0, v0 + e1, v0 + e2))
