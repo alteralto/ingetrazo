@@ -2605,6 +2605,21 @@ def _weld_landed(mesh, moving: set) -> bool:
     return True
 
 
+def _carried_faces(mesh, moving: set) -> list:
+    """The textured faces a move or turn carries WHOLE — every vertex of
+    every loop among ``moving`` (vertex ids). Their texture map rides along
+    (:func:`core.group._remap_uvws`); a face the move only stretches keeps
+    the map it had."""
+    out = []
+    for f in mesh.faces:
+        if not (f.attrs and f.attrs.get("texture")):
+            continue
+        loops = [f.loop] + list(getattr(f, "hole_loops", []) or [])
+        if all(id(v) in moving for lp in loops for v in lp):
+            out.append(f)
+    return out
+
+
 class MoveVerticesCommand(Command):
     """Translate every shared vertex at a set of positions by ``delta``, then
     **autofold**: any face the move warped out of its plane is split into
@@ -2625,9 +2640,13 @@ class MoveVerticesCommand(Command):
     flattened to nothing. Only a landing
     pays for the check, and only over the faces it touches."""
 
-    def __init__(self, positions: Iterable[QVector3D], delta: QVector3D) -> None:
+    def __init__(self, positions: Iterable[QVector3D], delta: QVector3D,
+                 carry_textures: bool = False) -> None:
         self.src = [QVector3D(p) for p in positions]
         self.delta = QVector3D(delta)
+        #: The Move tool's moves: a textured face moved whole takes its
+        #: image along instead of being re-projected where it lands (#1034).
+        self.carry_textures = carry_textures
         self._before: Optional[dict] = None
         self._after: Optional[dict] = None
         #: Whether the move joined moved vertices into ones it landed on.
@@ -2651,7 +2670,15 @@ class MoveVerticesCommand(Command):
             before = defects_near(
                 [v for v in scene.mesh.vertices
                  if _key(v.position) in keys or _key(v.position) in landing])
+        carried = (_carried_faces(scene.mesh, moving)
+                   if self.carry_textures else [])
         translate_points(scene, keys, self.delta)
+        if carried:
+            from PySide6.QtGui import QMatrix4x4
+            from core.group import _remap_uvws
+            t = QMatrix4x4()
+            t.translate(self.delta)
+            _remap_uvws(scene.mesh, t, carried)
         self.welded = _weld_landed(scene.mesh, moving)
         fold_nonplanar_faces(scene.mesh)
         if self.welded and before is not None:
@@ -2793,11 +2820,14 @@ class RotateVerticesCommand(Command):
     :class:`MoveVerticesCommand`."""
 
     def __init__(self, positions: Iterable[QVector3D], center: QVector3D,
-                 axis: QVector3D, degrees: float) -> None:
+                 axis: QVector3D, degrees: float,
+                 carry_textures: bool = False) -> None:
         self.src = [QVector3D(p) for p in positions]
         self.center = QVector3D(center)
         self.axis = QVector3D(axis)
         self.degrees = degrees
+        #: As in MoveVerticesCommand: a face turned whole turns its image.
+        self.carry_textures = carry_textures
         self._before: Optional[dict] = None
         self._after: Optional[dict] = None
 
@@ -2808,7 +2838,15 @@ class RotateVerticesCommand(Command):
             return
         self._before = scene.mesh.capture_state()
         m = rotation_matrix(self.center, self.axis, self.degrees)
-        rotate_points(scene, {_key(p) for p in self.src}, m)
+        keys = {_key(p) for p in self.src}
+        carried = (_carried_faces(
+            scene.mesh, {id(v) for v in scene.mesh.vertices
+                         if _key(v.position) in keys})
+            if self.carry_textures else [])
+        rotate_points(scene, keys, m)
+        if carried:
+            from core.group import _remap_uvws
+            _remap_uvws(scene.mesh, m, carried)
         fold_nonplanar_faces(scene.mesh)
         self._after = scene.mesh.capture_state()
 

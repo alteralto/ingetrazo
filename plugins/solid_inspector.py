@@ -629,7 +629,8 @@ def _section(title: str) -> QLabel:
 
 def _nav_button(arrow, tip: str) -> QToolButton:
     btn = QToolButton()
-    btn.setArrowType(arrow)
+    from views.rtl import set_arrow
+    set_arrow(btn, arrow)
     btn.setToolTip(tip)
     btn.setAutoRaise(True)
     btn.setFixedSize(30, 28)

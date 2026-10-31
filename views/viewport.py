@@ -1773,6 +1773,10 @@ class Viewport(QOpenGLWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        # The model and its camera are the same in every language: a right-
+        # to-left interface (#1067) does not mirror what is drawn here.
+        from views.rtl import keep_ltr
+        keep_ltr(self)
         # Hidden-line removal needs a real depth buffer. setDefaultFormat() in
         # main.py is best-effort; many platforms ignore it for QOpenGLWidget
         # and hand us a 0-bit depth context. Forcing the format here is the

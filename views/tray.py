@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSlider,
     QSpinBox,
+    QStyle,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -54,6 +55,7 @@ from PySide6.QtWidgets import (
 from views.color_dialog import get_color
 from core.i18n import tr
 from views.theme import style as theme_style
+from views.rtl import set_arrow
 from views.filedialogs import file_dialogs
 from core.mesh import Edge, Face
 from core.bim import face_net_area
@@ -123,7 +125,7 @@ class _Section(QWidget):
         self._btn.setCheckable(True)
         self._btn.setChecked(True)
         self._btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self._btn.setArrowType(Qt.DownArrow)
+        set_arrow(self._btn, Qt.DownArrow)
         # Clean, light header (QGIS-style): plain bold title on the panel
         # background with a subtle underline — no dark bar. Uses palette() roles
         # so it adapts to light and dark themes.
@@ -146,7 +148,7 @@ class _Section(QWidget):
 
     def _on_toggle(self, on: bool) -> None:
         self._content.setVisible(on)
-        self._btn.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+        set_arrow(self._btn, Qt.DownArrow if on else Qt.RightArrow)
         key = getattr(self, "_key", None)
         if key is not None:
             from PySide6.QtCore import QSettings
@@ -385,6 +387,11 @@ class FlowLayout(QLayout):
         y = rect.y() + m.top()
         right = rect.right() - m.right()
         row_h = 0
+        # Right to left (#1067) the rows fill from the right: Qt mirrors
+        # its own layouts, a custom one mirrors itself.
+        owner = self.parentWidget()
+        mirror = (not test_only and owner is not None
+                  and owner.isRightToLeft())
         for item in self._items:
             hint = item.sizeHint()
             if row_h and x + hint.width() - 1 > right:
@@ -392,7 +399,10 @@ class FlowLayout(QLayout):
                 y += row_h + self._spacing
                 row_h = 0
             if not test_only:
-                item.setGeometry(QRect(QPoint(x, y), hint))
+                geo = QRect(QPoint(x, y), hint)
+                if mirror:
+                    geo = QStyle.visualRect(Qt.RightToLeft, rect, geo)
+                item.setGeometry(geo)
             x += hint.width() + self._spacing
             row_h = max(row_h, hint.height())
         return y + row_h + m.bottom() - rect.y()
@@ -2077,7 +2087,7 @@ class MaterialsPanel(QWidget):
         self._edit_toggle = QToolButton()
         self._edit_toggle.setText(tr("Edit texture"))
         self._edit_toggle.setCheckable(True)
-        self._edit_toggle.setArrowType(Qt.RightArrow)
+        set_arrow(self._edit_toggle, Qt.RightArrow)
         self._edit_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self._edit_toggle.setStyleSheet(
             "QToolButton { border: none; padding: 2px; }"
@@ -2158,8 +2168,8 @@ class MaterialsPanel(QWidget):
 
         def _toggle_edit(on):
             self._edit_body.setVisible(on)
-            self._edit_toggle.setArrowType(Qt.DownArrow if on
-                                           else Qt.RightArrow)
+            set_arrow(self._edit_toggle, Qt.DownArrow if on
+                      else Qt.RightArrow)
             if on:
                 self._load_texture_fields()
 
@@ -2239,7 +2249,7 @@ class MaterialsPanel(QWidget):
             btn.setText(f"  {title}")
             btn.setCheckable(True)
             btn.setChecked(False)
-            btn.setArrowType(Qt.RightArrow)
+            set_arrow(btn, Qt.RightArrow)
             btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             btn.setStyleSheet(
                 "QToolButton { border: none; padding: 4px 2px;"
@@ -2257,7 +2267,7 @@ class MaterialsPanel(QWidget):
                     fn, pending[0] = pending[0], None
                     fn(g)
                 w.setVisible(on)
-                b.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+                set_arrow(b, Qt.DownArrow if on else Qt.RightArrow)
 
             btn.toggled.connect(toggle)
             root.addWidget(btn)

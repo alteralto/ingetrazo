@@ -521,9 +521,7 @@ class MainWindow(QMainWindow):
             if len(bars) < 2:
                 continue
             # rows first, then along the row — so breaks come back in place
-            bars.sort(key=(lambda tb: (tb.geometry().x(), tb.geometry().y()))
-                      if vertical else
-                      (lambda tb: (tb.geometry().y(), tb.geometry().x())))
+            bars.sort(key=self._toolbar_seat_key(vertical))
             seats = [(tb, self.toolBarBreak(tb), tb.isVisibleTo(self))
                      for tb in bars]
             for tb, brk, shown in seats:
@@ -545,6 +543,20 @@ class MainWindow(QMainWindow):
             # Windows only: on Wayland a maximize lands asynchronously, so a
             # window can be flagged maximized at its normal size for a moment
             # at start-up and this would toggle it for nothing.
+
+    def _toolbar_seat_key(self, vertical: bool):
+        """Sort key of a docked toolbar: its row (its column, in a side
+        area) first, then its place along it — in reading order. Right to
+        left (#1067) the first bar of a row is the rightmost one; ordered
+        by x they came back reversed and the overflow ate the first bars
+        (Select, Undo…)."""
+        rtl = self.isRightToLeft()
+
+        def key(tb):
+            g = tb.geometry()
+            x = -(g.x() + g.width()) if rtl else g.x()
+            return (x, g.y()) if vertical else (g.y(), x)
+        return key
 
     def _keep_maximized(self) -> None:
         """Re-maximize a window that a toolbar repack left smaller than its
@@ -605,10 +617,7 @@ class MainWindow(QMainWindow):
             bars = [tb for tb in self.findChildren(QToolBar)
                     if not tb.isFloating() and tb.isVisibleTo(self)
                     and self.toolBarArea(tb) == area]
-            if vertical:
-                bars.sort(key=lambda tb: (tb.geometry().x(), tb.geometry().y()))
-            else:
-                bars.sort(key=lambda tb: (tb.geometry().y(), tb.geometry().x()))
+            bars.sort(key=self._toolbar_seat_key(vertical))
             row = None
             used = 0
             for tb in bars:
@@ -1851,6 +1860,11 @@ class MainWindow(QMainWindow):
 
         help_menu = menubar.addMenu(tr("Help"))
         help_menu.addAction(search_action)
+        docs_action = QAction(tr("Documentation"), self)
+        docs_action.setStatusTip(tr(
+            "Open the IngeTrazo documentation in the web browser."))
+        docs_action.triggered.connect(self._on_documentation)
+        help_menu.addAction(docs_action)
         help_menu.addSeparator()
         get_models_action = QAction(tr("Get more models and textures…"), self)
         get_models_action.setStatusTip(tr(
@@ -2514,17 +2528,22 @@ class MainWindow(QMainWindow):
         btn = bar.findChild(QToolButton, "add_panels_button")
         if btn is None or bar.count() == 0:
             return
-        last = bar.tabRect(bar.count() - 1)
+        # Worked out left to right; a right-to-left bar (#1067) mirrors
+        # every place, so the room and the arrows sit at its other end.
+        from views.rtl import visual_rect
+        whole = bar.rect()
+        last = visual_rect(bar, whole, bar.tabRect(bar.count() - 1))
         y = max(0, last.center().y() - btn.height() // 2 + 1)
+        rtl = bar.isRightToLeft()
         arrows = sorted((b for b in bar.findChildren(QToolButton)
                          if b is not btn and b.isVisible()),
-                        key=lambda b: b.x())
+                        key=(lambda b: -b.x()) if rtl else (lambda b: b.x()))
         if arrows:
             w = int(bar.property("ingetrazo_arrow_px") or arrows[0].width())
             x = bar.width()
             for b in reversed(arrows):
                 x -= w
-                geo = QRect(x, b.y(), w, b.height())
+                geo = visual_rect(bar, whole, QRect(x, b.y(), w, b.height()))
                 if b.geometry() != geo:
                     b.setGeometry(geo)
             # The whole room, top to bottom: the cut tab ends at its edge.
@@ -2534,6 +2553,7 @@ class MainWindow(QMainWindow):
             geo = QRect(max(0, min(last.right() + 3,
                                    bar.width() - self._PLUS_PX - 2)), y,
                         self._PLUS_PX, self._PLUS_PX)
+        geo = visual_rect(bar, whole, geo)
         if btn.geometry() != geo:
             btn.setFixedSize(geo.size())
             btn.setGeometry(geo)
@@ -3430,6 +3450,10 @@ class MainWindow(QMainWindow):
         self._vcb_value.setStyleSheet(self._VCB_IDLE_STYLE)
         bar.addPermanentWidget(self._vcb_name)
         bar.addPermanentWidget(self._vcb_value)
+        # Numbers and coordinates read left to right in a mirrored (right-to-
+        # left, #1067) interface too: what is typed here goes to the tools.
+        from views.rtl import keep_ltr
+        keep_ltr(self._vcb_value, self._coord_label)
 
         # (valueBufferChanged → _on_value_buffer: see _wire_viewport.)
         # The coordinate and measurement texts change on EVERY mouse move;
@@ -7380,6 +7404,12 @@ class MainWindow(QMainWindow):
         self.viewport.flash_status(
             tr("Click to place the component (Esc cancels)"), 4000)
         self.viewport.update()
+
+    DOCUMENTATION_URL = "https://ingetrazo-docs.pages.dev/"
+
+    def _on_documentation(self) -> None:
+        from core.desktop_open import open_url
+        open_url(self.DOCUMENTATION_URL)
 
     def _on_get_models(self) -> None:
         QMessageBox.information(

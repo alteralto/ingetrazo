@@ -2968,6 +2968,12 @@ class _SheetItem(QGraphicsItem):
         self._resizing = False
         self._set_drag_cache(False)
         super().mouseReleaseEvent(event)
+        # A click that did not move keeps only the clicked item selected
+        # (Qt clears the rest on release), which dropped the partners the
+        # press had just pulled in: a grouped item clicked alone looked
+        # ungrouped and was moved alone (#1042). Bring the group back.
+        if self.isSelected() and getattr(self.model, "group_id", ""):
+            self.composer.sync_group_selection(self)
         if self._press_state is None:
             return
         current = {k: getattr(self.model, k) for k in self._press_state}
@@ -6635,6 +6641,10 @@ class ComposerWindow(QMainWindow):
         grid.addWidget(self.ruler_h, 0, 1)
         grid.addWidget(self.ruler_v, 1, 0)
         grid.addWidget(view, 1, 1)
+        # The sheet is a drawing: its rulers and canvas stay as they are in a
+        # right-to-left interface (#1067), the ruler on the left included.
+        from views.rtl import keep_ltr
+        keep_ltr(area)
         for bar in (view.horizontalScrollBar(), view.verticalScrollBar()):
             bar.valueChanged.connect(lambda *_a: self._refresh_rulers())
         return area

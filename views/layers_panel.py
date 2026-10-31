@@ -329,26 +329,37 @@ class _LineSample(QWidget):
         if self._hover:
             p.fillRect(r, pal.highlight())
             ink = pal.highlightedText().color()
+        # Right to left (#1067) the row reads from the right: the tick, the
+        # sample and the words mirror their places (not their shapes).
+        rtl = self.isRightToLeft()
         if self._checked:                    # the current one: a tick
             tick = QPen(ink, 1.8)
             tick.setCapStyle(Qt.RoundCap)
             p.setPen(tick)
             cy = r.center().y()
-            p.drawPolyline([QPointF(8, cy), QPointF(11, cy + 3),
-                            QPointF(17, cy - 4)])
+            dx = r.width() - 25 if rtl else 0
+            p.drawPolyline([QPointF(8 + dx, cy), QPointF(11 + dx, cy + 3),
+                            QPointF(17 + dx, cy - 4)])
         y = r.center().y() + 0.5
         end = self.LINE_END if self._text else r.right() - 12
+        if rtl:
+            p.save()
+            p.translate(r.width(), 0)
+            p.scale(-1, 1)
         if self.key is not None:
             p.setPen(line_pen(self.key, ink, self._width, 3.0))
             p.drawLine(QPointF(26, y), QPointF(end, y))
         if self.swatch is not None:
             see_through_swatch(p, QRectF(26, y - 7, end - 26, 14),
                                *self.swatch, ink)
+        if rtl:
+            p.restore()
         if self._text:
             p.setPen(ink)
             left = end + 14 if (self.key is not None
                                 or self.swatch is not None) else 26
-            p.drawText(r.adjusted(left, 0, 0, 0),
+            p.drawText(r.adjusted(0, 0, -left, 0) if rtl
+                       else r.adjusted(left, 0, 0, 0),
                        Qt.AlignVCenter | Qt.AlignLeft, self._text)
         p.end()
 

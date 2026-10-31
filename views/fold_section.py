@@ -49,7 +49,8 @@ class FoldSection(QWidget):
         self._show(on)
 
     def _show(self, on: bool) -> None:
-        self.header.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+        from views.rtl import set_arrow
+        set_arrow(self.header, Qt.DownArrow if on else Qt.RightArrow)
         self.body.setVisible(on)
 
 

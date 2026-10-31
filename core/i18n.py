@@ -31,7 +31,19 @@ LANGUAGE_NAMES = {"en": "English", "es": "Español",
                   "id": "Bahasa Indonesia", "fr": "Français", "de": "Deutsch",
                   "pl": "Polski", "ru": "Русский", "vi": "Tiếng Việt",
                   "lo": "ລາວ", "th": "ไทย",
-                  "ja": "日本語", "ko": "한국어"}
+                  "ja": "日本語", "ko": "한국어", "uk": "Українська",
+                  "ar": "العربية"}
+
+#: Languages written from right to left: the whole interface is mirrored
+#: for them (see views/rtl.py). Arabic ships; the rest are ready for when
+#: their catalogue comes.
+RTL_LANGUAGES = frozenset({"ar", "he", "fa", "ur"})
+
+
+def is_rtl(lang: str | None) -> bool:
+    """Whether ``lang`` (``"ar"``, ``"fa-IR"``…) is written right to left."""
+    return str(lang or "").split("-")[0].split("_")[0].lower() in RTL_LANGUAGES
+
 
 #: The saved choice that follows the operating system's language (#818);
 #: also what an unset choice means.
