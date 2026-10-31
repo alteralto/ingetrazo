@@ -847,6 +847,32 @@ def frame_from_points(positions) -> tuple:
             QVector3D(0.0, 0.0, 1.0))
 
 
+def _local_points(mesh):
+    """The vertex positions of ``mesh`` as an ``(N, 3)`` float64 array, or
+    None when it has none. A mesh still deferred (a lazy mesh of a big
+    document) is NOT built for it: its points are the welded positions the
+    build would make, in the same order. A box drawn over the 590 groups of
+    a 5-million-face model built every one of them, past 12 GB."""
+    import numpy as np
+    from core import lazy_mesh
+    from core.mesh import DeferredMesh
+    if type(mesh) is DeferredMesh:
+        d = mesh.__dict__
+        hit = d.get("_deferred_plan")
+        if hit is not None:
+            pos = hit.pos
+        else:
+            s = d["_deferred_source"]
+            pos = lazy_mesh.weld(np.asarray(s["pos"], dtype=np.float64),
+                                 s.get("sequential", False))[0]
+        return np.array(pos, dtype=np.float64) if len(pos) else None
+    verts = mesh.vertices
+    if not verts:
+        return None
+    return np.array([[v.position.x(), v.position.y(), v.position.z()]
+                     for v in verts], dtype=np.float64)
+
+
 def placement_points(group, cache=None):
     """Every vertex position of ``group`` and its nested placements, in WORLD
     space, as an ``(N, 3)`` float64 array. ``cache`` (``{id(mesh): array}``)
@@ -865,14 +891,12 @@ def placement_points(group, cache=None):
     if cache is None:
         cache = {}
     for g, m in iter_placements(group):
-        verts = g.mesh.vertices
-        if not verts:
-            continue
         arr = cache.get(id(g.mesh))
         if arr is None:
-            arr = cache[id(g.mesh)] = np.array(
-                [[v.position.x(), v.position.y(), v.position.z()]
-                 for v in verts], dtype=np.float64)
+            arr = _local_points(g.mesh)
+            if arr is None:
+                continue
+            cache[id(g.mesh)] = arr
         if m is not None:
             d = m.data()                      # column-major
             rot = np.array([[d[0], d[4], d[8]],
