@@ -179,6 +179,9 @@ def _swept_by_push(neighbour: Face, push_normal: QVector3D) -> bool:
 
 
 _RIM_SNAP = 5e-4
+# How far apart a hand-drawn face's corners may stand, along its own normal,
+# and still be read as one flat face meeting the opposite wall (#1076).
+_OUT_OF_TRUE = 2e-3
 
 
 def _onto_rim(p: QVector3D, face: Face) -> QVector3D:
@@ -1455,6 +1458,14 @@ class PushPullTool(Tool):
             dist = QVector3D.dotProduct(anchor - g.centroid(), n)
             if dist <= 1e-6:
                 continue  # coplanar or on the outward side
+            # A blocker stands behind the WHOLE base. The wall a door is
+            # drawn on touches the door's own corners: with the door's top
+            # a fraction of a millimetre out of true towards the room, its
+            # centroid read the wall as a blocker 0.04 mm deep and the push
+            # into the wall did nothing (#1076).
+            if min(QVector3D.dotProduct(v - g.centroid(), n)
+                   for v in self.base_face.vertices) <= _STITCH_TOL:
+                continue
             back_loop = [v - n * dist for v in self.base_face.vertices]
             if loop_inside_face(g, back_loop):
                 continue  # a through-hole target, not a blocker
@@ -2707,7 +2718,18 @@ class PushPullTool(Tool):
             if abs(QVector3D.dotProduct(fn, g.normal().normalized())) < 0.999:
                 continue  # not parallel
             dist = QVector3D.dotProduct(g.centroid() - origin, push)
-            if dist <= 1e-4 or dist > abs(d) + 1e-4:
+            # How far each corner has to go to meet the far plane. A door a
+            # fraction of a millimetre out of true reaches it with three
+            # corners while its centroid is still short: pushed the wall's
+            # thickness, it stopped at the centroid's 1e-4 and left its cap
+            # on the far wall (#1076). Within _OUT_OF_TRUE the push meets
+            # the face as soon as any corner does.
+            reach = [QVector3D.dotProduct(g.centroid() - v, push)
+                     for v in face.vertices]
+            lo, hi = min(reach), max(reach)
+            if hi - lo > _OUT_OF_TRUE:
+                lo = hi = dist
+            if dist <= 1e-4 or lo > abs(d) + 1e-4:
                 continue  # coplanar / behind / farther than the push reaches
             # Laid ON the far face's plane, not just carried ``dist`` along:
             # a hand-drawn door 0.2 mm out of true (one corner off its
@@ -2737,7 +2759,7 @@ class PushPullTool(Tool):
             # leaves the material through that face (it faces along the
             # push): a face looking back at the push belongs to something
             # in front, which a push past it must not bite.
-            if (abs(dist - abs(d)) > 1e-4
+            if (not lo - 1e-4 <= abs(d) <= hi + 1e-4
                     and QVector3D.dotProduct(gn, push) <= 0):
                 continue
             remainder = subtract_loop_from_face(g, back_loop)

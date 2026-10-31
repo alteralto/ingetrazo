@@ -197,6 +197,9 @@ def test_1076_door_pushed_into_the_wall(door, depth):
     # hundredth of a millimetre above the floor's edge and must still
     # meet it, with no sliver and no edge with three faces
     (2e-4, 0.0, 2e-4), (2e-4, 0.0, 0.02),
+    # pushed exactly the wall's thickness: three corners meet the far face
+    # while the centroid is still short of it
+    (2e-4, 0.0, 0.0), (2e-4, 5e-5, 0.0), (1e-4, 5e-5, 0.0),
 ])
 def test_1076_door_pushed_through_the_wall(door, tilt, lift, past):
     """Right onto the far face, or dragged a little past it: a door opening
@@ -229,6 +232,34 @@ def test_1076_door_push_survives_save_and_reopen(tmp_path):
     m = again.mesh
     assert (len(m.faces), len(m.edges), round(signed_volume(m), 5)) == sig
     assert is_closed(m) and _fins(m) == 0
+
+
+@pytest.mark.parametrize("door", sorted(_DOORS))
+@pytest.mark.parametrize("tilt", [1e-4, 2e-4, 1e-3])
+@pytest.mark.parametrize("depth", [0.1, 0.19])
+def test_1076_door_out_of_true_is_not_held_by_its_own_wall(door, tilt, depth):
+    """The way a click does it: the push into the wall is clamped by the
+    inward limit first. Door A, its top leaning towards the room, read the
+    wall it is drawn on as a blocker a few hundredths of a millimetre deep
+    and did not move at all; door B, leaning the other way, went in."""
+    from tools.pushpull import PushPullTool
+    scene, f = _plan(door, tilt)
+    v0, area = signed_volume(scene.mesh), f.area()
+    tool = PushPullTool()
+    tool.base_face = f
+    orient_outward(scene.mesh, only=(f,))
+    tool._anchor = f.centroid()
+    tool._normal = tool._outward_normal(f, scene.mesh)
+    tool._attached, tool._prism_cap = tool._classify_base(scene)
+    tool._compute_inward_limit(scene)
+    assert tool._limit_in is None or tool._limit_in > depth
+    tool._cap_positions = tool._cap_loop_positions(f)
+    tool.dragging = True
+    tool.extrusion = -depth
+    tool._clamp_extrusion()
+    vp = T._StubViewport(scene)
+    tool._commit(vp)
+    _solid_ok(scene, vp, v0, -area * depth, tol=2e-3)
 
 
 # ---- #570: the corner triangle of a turned notch, raised (@pacaeiro) -----
