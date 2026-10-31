@@ -3272,5 +3272,10 @@
  "Order by name": "ຮຽງຕາມຊື່",
  "Double-click to select its objects in the model": "ຄລິກສອງເທື່ອເພື່ອເລືອກວັດຖຸຂອງມັນໃນແບບຈຳລອງ",
  "Group — click to select it": "ກຸ່ມ — ຄລິກເພື່ອເລືອກ",
- "Locked rows are not deleted: unlock them first": "ແຖວທີ່ລັອກຈະບໍ່ຖືກລຶບ: ປົດລັອກກ່ອນ"
+ "Locked rows are not deleted: unlock them first": "ແຖວທີ່ລັອກຈະບໍ່ຖືກລຶບ: ປົດລັອກກ່ອນ",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "ບັນທຶກສີດ້ານໜ້າແລ້ວ — ຈະທາສີໜ້າພຽງໃນໂໝດເຊື່ອງເສັ້ນ ແລະ ໂໝດຂາວດຳ.",
+ "Front color — paints faces in Hidden line and Monochrome": "ສີດ້ານໜ້າ — ທາສີໜ້າພຽງໃນໂໝດເຊື່ອງເສັ້ນ ແລະ ຂາວດຳ",
+ "Restore defaults": "ຄືນຄ່າເລີ່ມຕົ້ນ",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "ຄືນການຕັ້ງຄ່າໃນໜ້າຕ່າງນີ້ເປັນຄ່າທີ່ມາກັບ IngeTrazo. ຈະບໍ່ມີການບັນທຶກຈົນກວ່າທ່ານຈະກົດ ຕົກລົງ. ພາສາ, ຜູ້ຊ່ວຍ AI, ປຸ່ມລັດ ແລະ ຫົວໜ່ວຍຂອງເອກະສານທີ່ເປີດຢູ່ຈະຄືເກົ່າ.",
+ "Distance ({unit}):": "ໄລຍະຫ່າງ ({unit}):"
 }

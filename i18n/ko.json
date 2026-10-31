@@ -3269,5 +3269,10 @@
  "Order by name": "이름순",
  "Double-click to select its objects in the model": "두 번 클릭하면 모델에서 해당 객체를 선택합니다",
  "Group — click to select it": "그룹 — 클릭하여 선택",
- "Locked rows are not deleted: unlock them first": "잠긴 행은 삭제되지 않습니다. 먼저 잠금을 해제하세요"
+ "Locked rows are not deleted: unlock them first": "잠긴 행은 삭제되지 않습니다. 먼저 잠금을 해제하세요",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "앞면 색상이 저장되었습니다 — 숨은선 모드와 단색 모드에서 면을 칠합니다.",
+ "Front color — paints faces in Hidden line and Monochrome": "앞면 색상 — 숨은선 모드와 단색 모드에서 면을 칠합니다",
+ "Distance ({unit}):": "거리 ({unit}):",
+ "Restore defaults": "기본값 복원",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "이 창의 설정을 IngeTrazo 기본 상태로 되돌립니다. 확인을 누르기 전까지는 아무것도 저장되지 않습니다. 언어, AI 도우미, 단축키, 열린 문서의 단위는 그대로 유지됩니다."
 }

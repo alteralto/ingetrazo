@@ -3269,5 +3269,10 @@
  "Order by name": "Сортировать по имени",
  "Double-click to select its objects in the model": "Дважды щёлкните, чтобы выделить её объекты в модели",
  "Group — click to select it": "Группа — щёлкните, чтобы выбрать её",
- "Locked rows are not deleted: unlock them first": "Заблокированные строки не удаляются: сначала разблокируйте их"
+ "Locked rows are not deleted: unlock them first": "Заблокированные строки не удаляются: сначала разблокируйте их",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "Цвет передней стороны сохранен — он применяется в режимах «Скрытые линии» и «Монохромный».",
+ "Front color — paints faces in Hidden line and Monochrome": "Цвет передней стороны — применяется для граней в режимах «Скрытые линии» и «Монохромный»",
+ "Distance ({unit}):": "Расстояние ({unit}):",
+ "Restore defaults": "Восстановить значения по умолчанию",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "Возвращает настройки этого окна к исходным настройкам IngeTrazo. Ничего не сохраняется, пока вы не нажмёте OK. Язык, ИИ-ассистент, сочетания клавиш и единицы открытого документа остаются без изменений."
 }

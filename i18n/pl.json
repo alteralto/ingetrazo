@@ -3277,5 +3277,10 @@
  "Order by name": "Sortuj według nazwy",
  "Double-click to select its objects in the model": "Kliknij dwukrotnie, aby zaznaczyć jej obiekty w modelu",
  "Group — click to select it": "Grupa — kliknij, aby ją zaznaczyć",
- "Locked rows are not deleted: unlock them first": "Zablokowane wiersze nie są usuwane: najpierw je odblokuj"
+ "Locked rows are not deleted: unlock them first": "Zablokowane wiersze nie są usuwane: najpierw je odblokuj",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "Zapisano kolor przedniej strony — jest stosowany w trybach Ukryte linie i Monochromatyczny.",
+ "Front color — paints faces in Hidden line and Monochrome": "Kolor przedniej strony — maluje ściany w trybach Ukryte linie i Monochromatyczny",
+ "Distance ({unit}):": "Odległość ({unit}):",
+ "Restore defaults": "Przywróć domyślne",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "Przywraca ustawienia tego okna do stanu, w jakim dostarczany jest IngeTrazo. Nic nie zostanie zapisane, dopóki nie naciśniesz OK. Język, Asystent AI, skróty klawiszowe i jednostki otwartego dokumentu pozostają bez zmian."
 }

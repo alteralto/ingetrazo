@@ -3272,5 +3272,10 @@
  "Order by name": "เรียงตามชื่อ",
  "Double-click to select its objects in the model": "ดับเบิลคลิกเพื่อเลือกวัตถุของมันในโมเดล",
  "Group — click to select it": "กลุ่ม — คลิกเพื่อเลือก",
- "Locked rows are not deleted: unlock them first": "แถวที่ล็อกไว้จะไม่ถูกลบ: ปลดล็อกก่อน"
+ "Locked rows are not deleted: unlock them first": "แถวที่ล็อกไว้จะไม่ถูกลบ: ปลดล็อกก่อน",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "บันทึกสีด้านหน้าแล้ว — ใช้ระบายพื้นผิวในโหมดซ่อนเส้น (Hidden line) และโหมดสีเดียว (Monochrome)",
+ "Front color — paints faces in Hidden line and Monochrome": "สีด้านหน้า — ระบายพื้นผิวในโหมดซ่อนเส้นและโหมดสีเดียว",
+ "Distance ({unit}):": "ระยะ ({unit}):",
+ "Restore defaults": "คืนค่าเริ่มต้น",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "คืนการตั้งค่าในหน้าต่างนี้เป็นค่าที่มากับ IngeTrazo จะไม่มีการบันทึกจนกว่าคุณจะกด ตกลง ภาษา ผู้ช่วย AI ปุ่มลัด และหน่วยของเอกสารที่เปิดอยู่จะคงเดิม"
 }

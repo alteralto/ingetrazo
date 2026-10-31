@@ -5659,6 +5659,7 @@ class MainWindow(QMainWindow):
             if panel is not None and hasattr(panel, "_window"):
                 panel._window = host
             self._composer = comp
+            self._update_title()
         return self._composer
 
     def _sheet_tab_menu(self, index: int, global_pos) -> None:
@@ -5666,11 +5667,10 @@ class MainWindow(QMainWindow):
         self._refresh_sheet_tabs()
 
     def _on_open_composer(self) -> None:
-        """Open (or raise) the sheet composer — see docs/composer-plan.md."""
-        self._ensure_composer()
-        self._composer.show()
-        self._composer.raise_()
-        self._composer.activateWindow()
+        """Open (or raise) the sheet composer — see docs/composer-plan.md.
+        Minimised, it comes back out of the taskbar."""
+        from views.composer import bring_to_front
+        bring_to_front(self._ensure_composer())
 
     # ---- Model / sheet tabs (the strip at the bottom) -----------------------
     def _refresh_sheet_tabs(self) -> None:
@@ -5720,9 +5720,8 @@ class MainWindow(QMainWindow):
         self._sheet_tab_menu(sheets[k] if 0 <= k < len(sheets) else k, pos)
 
     def _show_model(self) -> None:
-        self.show()
-        self.raise_()
-        self.activateWindow()
+        from views.composer import bring_to_front
+        bring_to_front(self)
         self._refresh_sheet_tabs()
 
     def _show_sheet(self, index: int) -> None:
@@ -8931,8 +8930,8 @@ class MainWindow(QMainWindow):
         self._update_title()
 
     def _update_title(self) -> None:
+        marker = " *" if self._is_dirty() else ""
         if self._workspace is not None:
-            marker = " *" if self._is_dirty() else ""
             self.setWindowTitle(f"IngeTrazo — {self._workspace.title()}{marker}")
             return
         if self._current_path is not None:
@@ -8941,9 +8940,12 @@ class MainWindow(QMainWindow):
             name = self._import_name
         else:
             name = tr("Untitled")
-        marker = " *" if self._is_dirty() else ""
         self.setWindowTitle(f"IngeTrazo — {name}{marker}")
         self._update_tab()
+        # The composer has a taskbar button of its own: it names the model.
+        composer = getattr(self, "_composer", None)
+        if composer is not None:
+            composer.set_document_title(f"{name}{marker}")
         self._refresh_sheet_tabs()      # a new / opened document: its sheets
 
     # ---- Window lifecycle ---------------------------------------------------

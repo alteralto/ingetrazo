@@ -3272,5 +3272,10 @@
  "Order by name": "Urutkan menurut nama",
  "Double-click to select its objects in the model": "Klik dua kali untuk memilih objeknya di model",
  "Group — click to select it": "Grup — klik untuk memilihnya",
- "Locked rows are not deleted: unlock them first": "Baris yang terkunci tidak dihapus: buka kuncinya dahulu"
+ "Locked rows are not deleted: unlock them first": "Baris yang terkunci tidak dihapus: buka kuncinya dahulu",
+ "Front color saved — it paints faces in Hidden line and Monochrome modes.": "Warna depan disimpan — mewarnai bidang pada mode Garis tersembunyi dan Monokrom.",
+ "Front color — paints faces in Hidden line and Monochrome": "Warna depan — mewarnai bidang pada mode Garis tersembunyi dan Monokrom",
+ "Distance ({unit}):": "Jarak ({unit}):",
+ "Restore defaults": "Pulihkan bawaan",
+ "Puts the settings of this window back to how IngeTrazo comes. Nothing is saved until you press OK. The language, the AI Assistant, the keyboard shortcuts and the units of the open document stay as they are.": "Mengembalikan pengaturan jendela ini seperti bawaan IngeTrazo. Tidak ada yang disimpan sampai Anda menekan OK. Bahasa, Asisten AI, pintasan keyboard, dan satuan dokumen yang terbuka tetap seperti semula."
 }
