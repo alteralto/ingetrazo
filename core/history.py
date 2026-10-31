@@ -4374,9 +4374,12 @@ class ExplodeGroupCommand(Command):
             # Instance prototypes hold LOCAL coords — explode in world.
             return P.map(p) if P is not None else QVector3D(p)
 
+        before = list(m.faces) if m.faces else []
+        added: list = []
         for f in g.mesh.faces:
             nf = m.add_face([W(v) for v in f.vertices],
                             [[W(v) for v in h] for h in f.holes] or None)
+            added.append(nf)
             # What the face showed inside is what it keeps outside: its own
             # paint, or — a default face — the group's on BOTH sides
             # (issue #47: the back used to fall back to default).
@@ -4399,6 +4402,10 @@ class ExplodeGroupCommand(Command):
             if k is not None:
                 stamp_edge_flags(k, edge_flags(e))
         m.resplit_curves()
+        # A face that lands on faces already there merges with them, as a
+        # pasted one does (#73): two boxes that touch share ONE wall instead
+        # of two coincident faces (issue #721).
+        _merge_overlapping_planes(scene, before, added)
 
         # The nested objects come out one level up, whole: their placement
         # composes with the parent's (a shared prototype is never touched),
@@ -4439,6 +4446,110 @@ class ExplodeGroupCommand(Command):
         if self._selection is not None:
             scene.selection = set(self._selection)
         scene.version += 1
+
+
+
+def _merge_overlapping_planes(scene, before, added) -> int:
+    """Rebuild, plane by plane, where faces just ``added`` to the mesh
+    overlap faces it already had (``before``): each region of the plane
+    ends up covered by ONE face, as when a face is drawn or pasted there
+    (:class:`RebuildPlaneFacesCommand`, scoped to the faces involved).
+    Faces that only share an edge or a corner are left alone, and so is
+    every plane no older face overlaps. Runs inside a command that already
+    holds a snapshot of the mesh, so it takes none. Returns how many planes
+    were rebuilt."""
+    if not before or not added:
+        return 0
+    mesh = scene.mesh
+    tol = RebuildPlaneFacesCommand._TOL
+    live = set(map(id, mesh.faces))
+    added = [f for f in added if id(f) in live]
+    if not added:
+        return 0
+
+    def box(f):
+        ps = f.vertices
+        xs = [p.x() for p in ps]
+        ys = [p.y() for p in ps]
+        zs = [p.z() for p in ps]
+        return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
+
+    def unit_normal(f):
+        n = f._newell()
+        length = n.length()
+        return n / length if length > 1e-9 else None
+
+    def overlap(alo, ahi, blo, bhi) -> bool:
+        # The _plane_merges test of Paste: the boxes overlap with some area
+        # along each axis, or are both flat along it.
+        return all(alo[i] < bhi[i] - tol and blo[i] < ahi[i] - tol
+                   or abs(ahi[i] - alo[i]) < tol and abs(bhi[i] - blo[i]) < tol
+                   for i in range(3))
+
+    new = []
+    glo = [float("inf")] * 3
+    ghi = [float("-inf")] * 3
+    for f in added:
+        n = unit_normal(f)
+        if n is None:
+            continue
+        lo, hi = box(f)
+        new.append((f, n, lo, hi))
+        glo = [min(a, b) for a, b in zip(glo, lo)]
+        ghi = [max(a, b) for a, b in zip(ghi, hi)]
+    if not new:
+        return 0
+    added_ids = set(map(id, added))
+    planes: list = []          # [origin, normal, [old faces], [new faces]]
+    for f in before:
+        if id(f) not in live or id(f) in added_ids:
+            continue
+        lo, hi = box(f)
+        if not all(lo[i] <= ghi[i] + tol and glo[i] <= hi[i] + tol
+                   for i in range(3)):
+            continue
+        n = None
+        for nf, nn, nlo, nhi in new:
+            if not overlap(lo, hi, nlo, nhi):
+                continue
+            if n is None:
+                n = unit_normal(f)
+                if n is None:
+                    break
+            if abs(QVector3D.dotProduct(n, nn)) < 1.0 - 1e-6:
+                continue
+            o = nf.vertices[0]
+            if any(abs(QVector3D.dotProduct(p - o, nn)) > tol
+                   for p in f.vertices):
+                continue
+            for entry in planes:
+                if (abs(QVector3D.dotProduct(entry[1], nn)) > 1.0 - 1e-6
+                        and abs(QVector3D.dotProduct(o - entry[0],
+                                                     entry[1])) < tol):
+                    break
+            else:
+                entry = [QVector3D(o), QVector3D(nn), [], []]
+                planes.append(entry)
+            if f not in entry[2]:
+                entry[2].append(f)
+            if nf not in entry[3]:
+                entry[3].append(nf)
+    if not planes:
+        return 0
+    keep = set(scene.selection)
+    for origin, n, old_faces, new_faces in planes:
+        # The new faces on that plane that overlap NO older face stay as
+        # they are; the rest rebuild with the older faces they cover.
+        cmd = RebuildPlaneFacesCommand(origin, n,
+                                       faces=old_faces + new_faces)
+        cmd.take_snapshot = False
+        cmd.do(scene)
+    live = set(map(id, mesh.faces))
+    live_e = set(map(id, mesh.edges))
+    scene.selection = {s for s in keep
+                       if not isinstance(s, (Face, Edge))
+                       or id(s) in (live if isinstance(s, Face) else live_e)}
+    return len(planes)
 
 
 class RenameGroupCommand(Command):
@@ -4991,6 +5102,9 @@ class RebuildPlaneFacesCommand(Command):
     split every crossing), so soft/curve flags survive. Snapshot undo."""
 
     _TOL = 1e-4
+    #: False when run inside a command that already snapshotted the mesh
+    #: (Explode's merge of overlapping faces, #721).
+    take_snapshot = True
 
     def __init__(self, origin: QVector3D, normal: QVector3D,
                  faces: Optional[Iterable] = None) -> None:
@@ -5014,7 +5128,8 @@ class RebuildPlaneFacesCommand(Command):
         from core.arrangement import planar_rebuild
         from core.triangulate import triangulate
 
-        self.snapshot = scene.mesh.capture_state()
+        self.snapshot = (scene.mesh.capture_state() if self.take_snapshot
+                         else None)
         if self.normal.lengthSquared() < 0.5:
             # No plane, nothing to rebuild. _on_plane would otherwise say
             # yes to EVERY point and the arrangement would run over the
