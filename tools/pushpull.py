@@ -178,6 +178,38 @@ def _swept_by_push(neighbour: Face, push_normal: QVector3D) -> bool:
     return False
 
 
+_RIM_SNAP = 5e-4
+
+
+def _onto_rim(p: QVector3D, face: Face) -> QVector3D:
+    """``p`` laid on ``face``'s outline when it lands within ``_RIM_SNAP``
+    of it: a corner of the outline first, else the nearest point of an
+    outline edge. A door a hair out of true, pushed through its wall,
+    reaches the far side with its sill a hundredth of a millimetre above
+    the floor's edge: left there, the opening's foot made a sliver and an
+    edge with three faces instead of meeting the floor (#1076)."""
+    verts = face.vertices
+    near = min(verts, key=lambda v: (v - p).lengthSquared())
+    if (near - p).length() <= _RIM_SNAP:
+        return QVector3D(near)
+    best, best_d = p, _RIM_SNAP
+    m = len(verts)
+    for i in range(m):
+        a, b = verts[i], verts[(i + 1) % m]
+        ab = b - a
+        ll = ab.lengthSquared()
+        if ll < 1e-18:
+            continue
+        t = QVector3D.dotProduct(p - a, ab) / ll
+        if not 0.0 < t < 1.0:
+            continue
+        q = a + ab * t
+        d = (q - p).length()
+        if d < best_d:
+            best, best_d = q, d
+    return best
+
+
 def _corner_dragged(face: Face, rim: set, push_normal: QVector3D) -> bool:
     """Whether a prism-cap translate moving the ``rim`` positions along
     ``push_normal`` would bend ``face`` at one of them — any of its vertices
@@ -2383,7 +2415,8 @@ class PushPullTool(Tool):
                 for lp in (*base_holes, *top_holes):
                     lp.reverse()
         if through is not None:
-            commands = self._through_commands(face, base, through)
+            commands = self._through_commands(face, base, through,
+                                              base_holes, faces)
         else:
             commands = self._extrude_commands(
                 face, base, top, base_holes, top_holes, count, attached
@@ -2676,29 +2709,59 @@ class PushPullTool(Tool):
             dist = QVector3D.dotProduct(g.centroid() - origin, push)
             if dist <= 1e-4 or dist > abs(d) + 1e-4:
                 continue  # coplanar / behind / farther than the push reaches
-            back_loop = [v + push * dist for v in face.vertices]
+            # Laid ON the far face's plane, not just carried ``dist`` along:
+            # a hand-drawn door 0.2 mm out of true (one corner off its
+            # plane) arrives that far off the opposite wall, outside every
+            # 1e-4 test below -- no hole, and the cap left almost flush on
+            # the wall wrecked the solid (#1076).
+            gn = g.normal().normalized()
+            gc = g.centroid()
+            back_loop = []
+            for v in face.vertices:
+                p = v + push * dist
+                back_loop.append(_onto_rim(
+                    p - gn * QVector3D.dotProduct(p - gc, gn), g))
             if loop_inside_face(g, back_loop):
                 if best is None or dist < best[0]:
                     best = (dist, g, back_loop, None)
                 continue
-            # Landing FLUSH on the far face with the opening on its rim — the
-            # corner piece left by a rounding arc pushed right through
-            # (Marco, 2026-09-15: «debería eliminarme ese triángulo»). Not a
-            # hole: the far face is trimmed to what
+            # Reaching the far face with the opening on its rim — the corner
+            # piece left by a rounding arc pushed right through (Marco,
+            # 2026-09-15: «debería eliminarme ese triángulo»), a door whose
+            # sill is the floor. Not a hole: the far face is trimmed to what
             # is left of it (the arc becomes its outline) and the cap goes.
-            if abs(dist - abs(d)) <= 1e-4:
-                remainder = subtract_loop_from_face(g, back_loop)
-                if remainder is not None and (best is None or dist < best[0]):
-                    best = (dist, g, back_loop, remainder)
+            # Pushed PAST the far face too, as a window's hole already was:
+            # flush-only sent a door dragged a hair beyond the wall down the
+            # blind-recess path, which poked the cap out the back and left
+            # edges with three faces (#1076). Past it only where the push
+            # leaves the material through that face (it faces along the
+            # push): a face looking back at the push belongs to something
+            # in front, which a push past it must not bite.
+            if (abs(dist - abs(d)) > 1e-4
+                    and QVector3D.dotProduct(gn, push) <= 0):
+                continue
+            remainder = subtract_loop_from_face(g, back_loop)
+            if remainder is not None and (best is None or dist < best[0]):
+                best = (dist, g, back_loop, remainder)
         if best is None:
             return None
         return best[1], best[2], best[3]
 
-    def _through_commands(self, face, base, through) -> list:
+    def _through_commands(self, face, base, through, base_holes=(),
+                          faces=()) -> list:
         """Build the commands for a through-hole: punch the far face, join it to
-        the front opening with a tunnel, and sweep the dangling base edges."""
+        the front opening with a tunnel, and sweep the dangling base edges.
+
+        A ring (a face whose holes are filled by faces of their own, the
+        «islands») pushed right through carries each island down as a
+        block: walls along the hole and a bottom on the far face (#1083).
+        Without them the island hung open and the push topped out at the
+        far face, its bottom never punched."""
         far_face, back_loop, remainder = through
         count = len(base)
+        islands = (self._through_islands(face, base_holes, far_face,
+                                         back_loop, faces)
+                   if base_holes and remainder is None else [])
         commands: list = [
             DeleteFaceCommand(face),       # remove the pushed cap (window pane)
             DeleteFaceCommand(far_face),   # re-add the far face with a new hole
@@ -2728,8 +2791,84 @@ class PushPullTool(Tool):
             j = (i + 1) % count
             commands.append(AddFaceCommand(
                 [base[i], base[j], back_loop[j], back_loop[i]], auto=False))
+        for hole, back in islands:
+            m = len(hole)
+            for i in range(m):
+                commands.append(AddEdgeCommand(back[i], back[(i + 1) % m]))
+            for i in range(m):
+                commands.append(AddEdgeCommand(hole[i], back[i]))
+            for i in range(m):
+                j = (i + 1) % m
+                commands.append(AddFaceCommand(
+                    [hole[i], hole[j], back[j], back[i]], auto=False))
+            commands.append(AddFaceCommand(list(back), auto=False))
         commands.append(PruneOrphanEdgesCommand(list(base) + list(back_loop)))
         return commands
+
+    @staticmethod
+    def _through_islands(face, base_holes, far_face, back_loop, faces):
+        """``[(hole, back_hole)]`` for a ring pushed through: each hole of
+        ``face`` with its copy on the far face's plane — or ``[]`` (no
+        island geometry, the old behaviour) unless EVERY hole is filled by
+        a single hole-free face on the same plane (the island), so an
+        opening that already goes through (a window the ring frames) is
+        never capped."""
+        if not base_holes or len(back_loop) < 3:
+            return []
+        gn = far_face.normal().normalized()
+        gc = far_face.centroid()
+        # The push direction, from the opening's own sweep.
+        lead = back_loop[0] - face.vertices[0]
+        if lead.length() < 1e-9:
+            return []
+        push = lead.normalized()
+        den = QVector3D.dotProduct(push, gn)
+        if den < 1e-6:
+            # Only through the face the push LEAVES the material by (it
+            # faces along the push). An outward push that meets a face
+            # looking back at it -- the eye model's iris raised past the
+            # outer ring -- is not a ring carved through a slab.
+            return []
+        # The opening must land strictly INSIDE the far face, clear of its
+        # rim and of its holes: an iris raised to an outer ring's cap meets
+        # it along the cap's own hole, which is no slab to carve through.
+        def _clear(p) -> bool:
+            for lp in (far_face.vertices, *far_face.holes):
+                k = len(lp)
+                for i in range(k):
+                    a, b = lp[i], lp[(i + 1) % k]
+                    ab = b - a
+                    L2 = ab.lengthSquared()
+                    t = 0.0 if L2 < 1e-18 else max(0.0, min(
+                        1.0, QVector3D.dotProduct(p - a, ab) / L2))
+                    if (a + ab * t - p).length() < 1e-4:
+                        return False
+            return True
+        if not all(_clear(p) for p in back_loop):
+            return []
+        out = []
+        for hole in base_holes:
+            m = len(hole)
+            if m < 3:
+                return []
+            filled = None
+            for i in range(m):
+                kind, g = classify_push_edge(face, hole[i], hole[(i + 1) % m],
+                                             faces)
+                if kind != "coplanar" or g is None or g.holes \
+                        or (filled is not None and g is not filled):
+                    return []
+                filled = g
+            if filled is None or len(filled.vertices) != m:
+                return []
+            back = []
+            for p in hole:
+                t = QVector3D.dotProduct(gc - p, gn) / den
+                back.append(p + push * t)
+            if not loop_inside_face(far_face, back):
+                return []
+            out.append((list(hole), back))
+        return out
 
     def _reset(self) -> None:
         self.hovered_face = None
