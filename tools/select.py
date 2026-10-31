@@ -163,6 +163,68 @@ def _box_payload(viewport, pg):
     return out
 
 
+def _local_bounds(ch):
+    """``(lo, hi)`` of everything the box test reads of chunk ``ch`` (the
+    triangle corners and the edges), cached on it; None when empty."""
+    import numpy as np
+    # Keyed on the very arrays: a moved chunk gets new ones (a shift
+    # rebuilds them), and stale bounds would answer for where it was.
+    hit = ch.get("_box_bounds")
+    if hit is not None and hit[0] is ch["v0"] and hit[1] is ch["edges"]:
+        return hit[2]
+    parts = []
+    if ch["v0"] is not None and len(ch["v0"]):
+        v0, e1, e2 = ch["v0"], ch["e1"], ch["e2"]
+        parts += [v0, v0 + e1, v0 + e2]
+    pair = np.frombuffer(ch["edges"], np.float32).reshape(-1, 3)
+    if len(pair):
+        parts.append(pair.astype(np.float64))
+    if parts:
+        pts = np.concatenate(parts, axis=0)
+        hit = (pts.min(axis=0), pts.max(axis=0))
+    else:
+        hit = None
+    ch["_box_bounds"] = (ch["v0"], ch["edges"], hit)
+    return hit
+
+
+def _placement_side(viewport, pg, rect):
+    """``"in"`` when everything the box test reads of placement ``pg``
+    projects inside ``rect``, ``"out"`` when all of it lies past one side
+    of it, ``"empty"`` when it has nothing, None when that takes the full
+    test. Decided on the eight
+    corners of its bounding box, all in front of the camera: a projection
+    keeps what is inside a box inside the hull of its corners."""
+    import numpy as np
+    xf = getattr(pg, "xform", None)
+    if xf is None or getattr(pg, "mesh", None) is None:
+        ch = viewport._group_chunk(pg)
+        tp = None
+    else:
+        from views.viewport import _paint_of, _placed_maps, _proto_wrapper
+        ch = viewport._group_chunk(
+            _proto_wrapper(viewport, pg.mesh, _paint_of(viewport, pg)))
+        tp = _placed_maps(xf)[2]
+    bb = _local_bounds(ch)
+    if bb is None:
+        return "empty"
+    lo, hi = bb
+    box = np.array([[x, y, z] for x in (lo[0], hi[0])
+                    for y in (lo[1], hi[1]) for z in (lo[2], hi[2])])
+    if tp is not None:
+        box = tp(box)
+    xs, ys, ok = viewport._project_px(box)
+    if not ok.all():
+        return None
+    x0, y0, x1, y1 = rect
+    if ((xs >= x0) & (xs <= x1) & (ys >= y0) & (ys <= y1)).all():
+        return "in"
+    if (xs < x0).all() or (xs > x1).all() or (ys < y0).all() \
+            or (ys > y1).all():
+        return "out"
+    return None
+
+
 def _box_group_fast(viewport, group, rect, crossing):
     """Vectorized box test for one (non-billboard) group via its chunk
     arrays. True/False, or None to fall back to the per-vertex walk."""
@@ -178,8 +240,25 @@ def _box_group_fast(viewport, group, rect, crossing):
     expand = getattr(viewport, "_expand_placements", None)
     places = expand(group) if expand is not None else [group]
     corners, edge_parts = [], []
+    seen = False
     try:
         for pg in places:
+            # A placement whose box lands wholly inside the rectangle, or
+            # wholly past one of its sides, answers without its triangles:
+            # on a model of 2 000 instances the corners of every triangle
+            # carried to world and projected were most of a box's 5 s.
+            side = _placement_side(viewport, pg, rect)
+            if side == "empty":
+                continue
+            seen = True
+            if side == "out":
+                if not crossing:
+                    return False
+                continue
+            if side == "in":
+                if crossing:
+                    return True
+                continue
             ch = _box_payload(viewport, pg)
             v0, e1, e2 = ch["v0"], ch["e1"], ch["e2"]
             if v0 is not None:
@@ -189,6 +268,12 @@ def _box_group_fast(viewport, group, rect, crossing):
                 edge_parts.append(pair.astype(np.float64))
     except Exception:  # noqa: BLE001
         return None
+    if not corners and not edge_parts:
+        if not seen:
+            return None
+        # Every placement answered on its box: in window mode none was
+        # out (that returned False), in crossing mode none was in.
+        return not crossing
     pairs = (np.concatenate(edge_parts, axis=0) if edge_parts
              else np.empty((0, 3)))
     if len(pairs):
