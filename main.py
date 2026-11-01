@@ -63,6 +63,10 @@ def _init_language() -> None:
     app = QApplication.instance()
     if app is not None:
         apply_language_direction(app, lang)
+        # Lao (#850) on Windows: a font that holds the script, so its marks
+        # compose with their consonants.
+        from views.script_fonts import apply_script_font
+        apply_script_font(app, lang)
 
 
 class _ButtonsOnlyTranslator(QTranslator):
