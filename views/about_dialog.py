@@ -258,6 +258,10 @@ CONTRIBUTORS = [
     ("Alexey Tkachenko",
      ".skp components scaled by −1 that keep their front.",
      "https://github.com/alteralto"),
+    ("Aashish — IngeTrazo Tutorials",
+     "The IngeTrazo Tutorials channel on YouTube, and nine extensions: "
+     "MultiView, Phasing Animator, Kitchen Maker, Taper and more.",
+     "https://github.com/aashishzharbade-arch"),
 ]
 
 #: Roll speed: pixels per tick, and the tick.

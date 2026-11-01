@@ -169,6 +169,18 @@ natural y más de cuarenta aportes de la comunidad.**
   (Leelawadee UI) y las vocales y tonos quedan sobre su consonante; el
   lao vuelve a ofrecerse en Preferencias ▸ Idioma.
 
+### Gracias
+
+- A **Aashish** y su canal **IngeTrazo Tutorials** en YouTube
+  (@aashishzharbade-arch), que enseña el programa, sus extensiones y sus
+  flujos de trabajo, y que ha creado nueve extensiones del catálogo:
+  MultiView, Phasing Animator, Kitchen Maker, Display Scale, Taper, Bevel,
+  Curve Tools, Texture Library y Make Stair. Un ecosistema que le da vida
+  a IngeTrazo.
+- A todos los que aportaron código, traducciones, reportes y archivos de
+  prueba a esta versión, y en especial a Gabriel, Pedro, Rafael y Ahsan,
+  los pilares que dieron estructura al proyecto.
+
 ### Problemas conocidos
 
 - Modelos de 5 millones de caras: abrir (~16 s), el primer movimiento con
