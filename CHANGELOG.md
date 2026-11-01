@@ -6,9 +6,9 @@ follow [SemVer](https://semver.org).
 
 ## [0.6.0] — 2026-11-01
 
-**Varios proyectos en pestañas en la misma ventana, árabe con la interfaz
-de derecha a izquierda y ucraniano, Empujar/Tirar que abre puertas y
-ventanas en muros reales, los .skp con sus grupos y componentes como en el
+**Varios proyectos en pestañas en la misma ventana; IngeTrazo ya habla 17
+idiomas, los últimos el árabe (con la interfaz de derecha a izquierda) y el
+ucraniano; Empujar/Tirar que abre puertas y ventanas en muros reales, los .skp con sus grupos y componentes como en el
 archivo, superficies curvas que se ven redondas, oclusión ambiental más
 natural y más de cuarenta aportes de la comunidad.**
 
