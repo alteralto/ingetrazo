@@ -53,10 +53,9 @@ _catalog: dict[str, str] = {}
 _lang = "en"
 
 
-#: Catalogues that ship but are not offered yet. Lao (#850): on Windows the
-#: interface font has no Lao, and its vowel and tone marks were drawn apart
-#: from their consonants (Windows round 0.5.11); back once that is fixed.
-HIDDEN_LANGUAGES = frozenset({"lo"})
+#: Catalogues that ship but are not offered yet. Lao (#850) was here until
+#: its marks composed on Windows (views/script_fonts.py, round 0.6.0).
+HIDDEN_LANGUAGES: frozenset[str] = frozenset()
 
 
 def available_languages() -> list[str]:

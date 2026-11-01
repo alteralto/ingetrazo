@@ -53,10 +53,8 @@ def test_every_language_has_every_message(path):
     assert not missing, f"{len(missing)} messages missing: {missing[:3]}"
 
 
-def test_lao_ships_but_is_not_offered_yet():
-    """Lao is drawn with its marks apart on Windows (round 0.5.11): kept in
-    i18n/ for when that is fixed, left out of the Language menu and
-    Preferences until then."""
+def test_lao_is_offered_again():
+    """Lao (#850) is offered again since its marks compose on Windows
+    (Windows round 0.6.0, views/script_fonts.py)."""
     assert (_I18N_DIR / "lo.json").is_file()
-    assert "lo" not in available_languages()
-    assert {"th", "ja", "ko", "vi"} <= set(available_languages())
+    assert {"lo", "th", "ja", "ko", "vi"} <= set(available_languages())
