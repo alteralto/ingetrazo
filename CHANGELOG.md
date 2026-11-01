@@ -15,50 +15,73 @@ natural y más de cuarenta aportes de la comunidad.**
 ### Añadido
 
 - **Proyectos en pestañas** (#1066): se abren varios proyectos en la misma
-  ventana, cada uno con su deshacer, sus láminas y su autoguardado. Archivo
-  ▸ Nueva pestaña; un .igz abierto con doble clic desde el explorador de
+  ventana, cada uno con su deshacer, sus láminas y su autoguardado.
+  Archivo ▸ Nuevo (Ctrl+N) o el «+» de la barra de pestañas abre una
+  pestaña nueva; un .igz abierto con doble clic desde el explorador de
   archivos o arrastrado a la ventana llega como pestaña nueva (un .skp, en
   cuanto la ventana termina de pintarse). Al pasar el ratón por una pestaña
   de atrás se ve una vista previa. Al cerrar una pestaña su memoria vuelve
   al sistema: cerrar el modelo SPR con plaza abierta en otra pestaña baja
   a ~1 GB. Las extensiones siguen con la API 2 y las que cambian el
-  widget central siguen funcionando.
+  widget central siguen funcionando. *Cómo probarlo:* con un proyecto
+  abierto, Archivo ▸ Abrir otro .igz (o haz doble clic en uno desde el
+  explorador): llega como pestaña nueva; cambia con Ctrl+RePág/AvPág,
+  cierra con Ctrl+W.
 - **Árabe** (@Alhlhli, #1067) con la **interfaz de derecha a izquierda**:
   menús, paneles, barras y diálogos se reflejan; la vista 3D, las láminas
   y los campos de números siguen de izquierda a derecha. Los demás idiomas
-  no cambian.
-- **Ucraniano** (@bolotov, #1054). Con el árabe, el ucraniano y el lao, que vuelve a ofrecerse, IngeTrazo habla 17 idiomas.
+  no cambian. *Cómo probarlo:* Ventana ▸ Preferencias… ▸ Idioma ▸ العربية
+  y reinicia IngeTrazo.
+- **Ucraniano** (@bolotov, #1054). Con el árabe, el ucraniano y el lao, que vuelve a ofrecerse, IngeTrazo habla 17 idiomas. *Cómo probarlo:* Ventana ▸ Preferencias… ▸
+  Idioma, y reinicia.
 - **«Idioma del sistema»** como opción propia en Preferencias ▸ Idioma
   (#818, @francisreboucas en #875): sigue al sistema también después de
-  haber elegido otro idioma.
+  haber elegido otro idioma. *Dónde:* Ventana ▸ Preferencias… ▸ Idioma ▸
+  «Igual que el sistema», la primera opción.
 - **El compositor de láminas en su propia ventana** (#1068,
   @canalsecuario-blip en #1069): se saca de la barra de tareas y vuelve; ya
-  no queda un recuadro fijo tapando las pestañas al minimizarlo.
+  no queda un recuadro fijo tapando las pestañas al minimizarlo. *Cómo
+  probarlo:* Archivo ▸ Compositor de láminas…: se abre en una ventana
+  aparte, con su propio botón en la barra de tareas.
 - **Navegador que ordena, pliega y filtra** (#734, @canalsecuario-blip en
   #1002): por capa con encabezados plegables o por nombre, y un embudo
-  para filtrar.
+  para filtrar. *Dónde:* el panel Navegador, en la barra lateral: arriba
+  están el orden (por capa o por nombre) y el embudo.
 - **Bloquear y desbloquear grupos con clic derecho** sobre el modelo (#782,
-  @canalsecuario-blip en #1047).
+  @canalsecuario-blip en #1047). *Cómo probarlo:* clic derecho sobre un
+  grupo ▸ Bloquear; ya no se puede mover ni editar hasta Desbloquear.
 - **Restaurar valores predeterminados** en Preferencias
   (@canalsecuario-blip, #1052), también los ejes del ratón 3D y la
-  intensidad del atenuado.
+  intensidad del atenuado. *Dónde:* Ventana ▸ Preferencias…, botón
+  «Restablecer valores predeterminados» abajo; el idioma y la clave de
+  IA no se tocan.
 - **Ratón 3D (SpaceMouse) con ejes y perfiles configurables** (@deedend,
-  #581); el perfil por defecto mueve la vista como antes.
+  #581); el perfil por defecto mueve la vista como antes. *Dónde:*
+  Ventana ▸ Preferencias… ▸ pestaña Ratón 3D.
 - **Explotar imagen** (#687): clic derecho sobre una imagen importada la
   convierte en un grupo con la foto como textura, en un solo deshacer; el
-  cuentagotas toma el color de la imagen.
+  cuentagotas toma el color de la imagen. *Cómo probarlo:* Archivo ▸
+  Importar ▸ Imagen (PNG / JPG)…, colócala, clic derecho sobre ella ▸
+  Explotar imagen.
 - **Asistente de IA**: proveedor OpenCode Go y un chat legible con
   burbujas, fotos, barra de «pensando» y botón Detener (@changastyle,
   #814); la clave se puede leer de una variable de entorno cuando el campo
   está vacío (#998, @ultracat en #1014; OpenCode Go lee también
-  `OPENCODE_API_KEY`).
+  `OPENCODE_API_KEY`). *Dónde:* Extensiones ▸ Asistente IA (Ctrl+Mayús+A);
+  el proveedor y la clave, en Ventana ▸ Preferencias… ▸ Asistente IA.
 - **Iso** salta a la vista isométrica más cercana (@pacaeiro, #995).
+  *Cómo probarlo:* gira la cámara hacia cualquier esquina del modelo y
+  pulsa Cámara ▸ Vistas estándar ▸ Isométrica (Ctrl+4): va a la
+  isométrica de esa esquina, no siempre a la misma.
 - **BIM**: el metrado encuentra etiquetas dentro de grupos y el panel
   lista los objetos en los grupos que los contienen (@BastelBaus, #1035).
+  *Cómo probarlo:* etiqueta como muro algo que está dentro de un grupo y
+  mira el panel BIM.
 - **Ayuda ▸ Documentación** abre el manual en línea (@BastelBaus, #1036).
 - La capa activa muestra su lápiz con el color de acento (@APBureauEtude,
   #1018), y al editar un grupo o componente se ve mejor dónde se está y
-  cómo salir (@APBureauEtude, #947).
+  cómo salir (@APBureauEtude, #947). *Dónde:* el lápiz, en el panel Capas;
+  para lo segundo, doble clic en un grupo.
 
 ### Cambiado
 
@@ -68,18 +91,25 @@ natural y más de cuarenta aportes de la comunidad.**
   peso coseno, la luz que rebotan las paredes aclara los rincones claros y
   el peso de cada superficie baja con la distancia; un segundo desenfoque
   deja el degradado liso. La Intensidad es lineal (1 es el valor físico) y
-  la Distancia tiene un deslizador de 1 cm a 50 m.
+  la Distancia tiene un deslizador de 1 cm a 50 m. *Cómo activarla:* en
+  el panel Estilos de la barra lateral, marca la casilla «Oclusión
+  ambiental» y mueve Distancia e Intensidad; se ve en los rincones, al pie
+  de los muros y bajo los muebles. Viene apagada en todos los estilos, y
+  se guarda con el estilo del documento.
 - **Las superficies curvas se ven redondas** y no facetadas (#131,
   @canalsecuario-blip en #809): el sombreado se suaviza a través de las
-  aristas suaves.
+  aristas suaves. *Cómo probarlo:* no hay que activar nada; abre un
+  modelo con superficies curvas, o dibuja un círculo y empújalo hasta
+  hacer un cilindro: se ve liso, sin franjas.
 - **Importar .skp conserva la estructura del archivo**: grupos como grupos
   y componentes como componentes (#1029), anidados y con sus nombres
   (@BastelBaus en #922; cierra #866), las anotaciones con su ancla
   (@BastelBaus en #960) y las líneas sueltas de una etiqueta oculta se
   quedan fuera. Al abrir un .skp el Navegador puede mostrar muchos menos
-  objetos arriba: es la estructura que trae el archivo.
+  objetos arriba: es la estructura que trae el archivo. *Cómo probarlo:*
+  Archivo ▸ Abrir un .skp y despliega el Navegador.
 - **Exportar COLLADA conserva grupos, componentes y etiquetas**
-  (@vicc3d, #966).
+  (@vicc3d, #966). *Dónde:* Archivo ▸ Exportar ▸ COLLADA (.dae)….
 
 ### Arreglado
 
